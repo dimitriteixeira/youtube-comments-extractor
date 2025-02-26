@@ -60,7 +60,6 @@ const categories = {
 
 // Inicialização
 async function init() {
-
     document.getElementById("year").textContent = new Date().getFullYear();
 
     // Inicializar referências a elementos
@@ -74,6 +73,9 @@ async function init() {
 
     // Verificar se o content script está pronto
     await checkContentScriptStatus();
+
+    // Verificar se há uma extração em andamento
+    await checkExtractionState();
 
     // Verificar se já existe uma análise para o vídeo atual
     await checkExistingAnalysis();
@@ -235,6 +237,45 @@ async function ensureContentScriptReady() {
     }
 }
 
+// Verificar se há uma extração de comentários em andamento
+async function checkExtractionState() {
+    if (!activeTab) return;
+
+    try {
+        const response = await chrome.tabs.sendMessage(activeTab.id, {
+            action: 'getExtractionState'
+        });
+
+        if (response && response.state) {
+            const state = response.state;
+            console.log('Estado da extração recuperado:', state);
+
+            // Se a extração estiver em andamento, mostrar a barra de progresso
+            if (state.isExtracting) {
+                showProgress(state.progress.message || 'Extração em andamento...');
+                updateProgress(state.progress.percentage || 0, state.progress.message);
+                setStatus('Extraindo comentários...', 'loading');
+            }
+            // Se a extração foi concluída com erro, mostrar o erro
+            else if (state.complete && state.error) {
+                showError('Erro na extração', state.error);
+            }
+            // Se a extração foi interrompida, mostrar mensagem apropriada
+            else if (state.error && state.error.includes('interrompida')) {
+                showProgress('A extração foi interrompida');
+                setTimeout(() => {
+                    hideProgress();
+                }, 3000);
+            }
+
+            return state;
+        }
+    } catch (error) {
+        console.log('Nenhum estado de extração encontrado ou erro:', error);
+        return null;
+    }
+}
+
 // Processo principal de extração e análise de comentários
 async function extractAndProcessComments() {
     // Limpar resultados anteriores
@@ -266,6 +307,29 @@ async function extractAndProcessComments() {
     const isReady = await ensureContentScriptReady();
     if (!isReady) {
         return;
+    }
+
+    // Verificar se já existe uma extração em andamento
+    try {
+        const extractionState = await chrome.tabs.sendMessage(activeTab.id, {
+            action: 'getExtractionState'
+        });
+
+        // Se já estiver extraindo, apenas atualizar a interface
+        if (extractionState && extractionState.state && extractionState.state.isExtracting) {
+            console.log('Extração já em andamento, atualizando interface...');
+            const state = extractionState.state;
+            showProgress(state.progress.message || 'Extração em andamento...');
+            updateProgress(state.progress.percentage || 0, state.progress.message);
+            setStatus('Extraindo comentários...', 'loading');
+
+            // Configurar listener para atualizações de progresso
+            chrome.runtime.onMessage.addListener(handleExtractionMessages);
+            return;
+        }
+    } catch (error) {
+        console.log('Erro ao verificar estado da extração:', error);
+        // Prosseguir com uma nova extração se não conseguir verificar o estado
     }
 
     // Inicia o processo de extração
@@ -364,6 +428,29 @@ function handleExtractionMessages(message) {
                 window.extractionPromiseReject(new Error(message.error));
                 window.extractionPromiseResolve = null;
                 window.extractionPromiseReject = null;
+            }
+        }
+    }
+    else if (message.action === 'extractionStateUpdate') {
+        if (message.state) {
+            const state = message.state;
+            console.log('Atualizando interface com estado da extração:', state);
+
+            if (state.isExtracting) {
+                // Atualizar a interface com o progresso atual
+                showProgress(state.progress.message || 'Extração em andamento...');
+                updateProgress(state.progress.percentage || 0, state.progress.message);
+                setStatus('Extraindo comentários...', 'loading');
+            }
+            else if (state.complete) {
+                if (state.error) {
+                    // Se houve erro, mostrar
+                    showError('Erro na extração', state.error);
+                } else if (state.progress.stage === 'complete') {
+                    // Se a extração foi concluída com sucesso, ocultar progresso
+                    hideProgress();
+                    setStatus('Extração concluída', 'success');
+                }
             }
         }
     }

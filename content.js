@@ -77,6 +77,44 @@ let appState = {
     injectionAttempts: 0
 };
 
+// Estado da extração de comentários
+let extractionState = {
+    isExtracting: false,
+    startTime: null,
+    progress: {
+        stage: null, // 'loading', 'processing', 'complete'
+        total: 0,
+        current: 0,
+        message: '',
+        percentage: 0
+    },
+    config: null,
+    commentCount: 0,
+    error: null,
+    complete: false
+};
+
+// Função para atualizar o estado da extração
+function updateExtractionState(update) {
+    extractionState = { ...extractionState, ...update };
+
+    // Armazenar o estado na chrome.storage para persistência
+    chrome.storage.session.set({
+        'commentExtractionState': extractionState
+    }, function () {
+        console.log('Estado da extração atualizado e salvo:', extractionState);
+    });
+
+    // Notificar o popup se estiver aberto
+    chrome.runtime.sendMessage({
+        action: 'extractionStateUpdate',
+        state: extractionState
+    }).catch(err => {
+        // É normal haver erro aqui se o popup estiver fechado
+        console.log('Popup possivelmente fechado, não foi possível atualizar estado');
+    });
+}
+
 // Verifica se temos análise salva no localStorage
 function checkForStoredAnalysis() {
     try {
@@ -416,7 +454,13 @@ function tryInjectAnalysisButton() {
 }
 
 // Configurar o observador quando a página carregar
-window.addEventListener('load', setupObserver);
+window.addEventListener('load', async () => {
+    // Verificar se existe um estado de extração salvo
+    await checkSavedExtractionState();
+
+    // Configurar o observador para injetar o botão quando necessário
+    setupObserver();
+});
 
 // Detectar mudanças na URL (navegação entre vídeos)
 let lastUrl = location.href;
@@ -471,6 +515,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'ping') {
         console.log('Ping recebido');
         sendResponse({ status: 'active' });
+        return true;
+    }
+
+    // Verificar o estado atual da extração
+    if (request.action === 'getExtractionState') {
+        console.log('Solicitação de estado atual da extração recebida');
+        sendResponse({
+            state: extractionState
+        });
         return true;
     }
 
@@ -535,6 +588,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             }
         };
 
+        // Se já estamos extraindo, envie o estado atual
+        if (extractionState.isExtracting) {
+            console.log('Extração já em andamento, retornando estado atual');
+            sendResponse({
+                status: 'extraction_in_progress',
+                state: extractionState
+            });
+            return true;
+        }
+
         // Notificar que o processo começou
         sendResponse({ status: 'started' });
 
@@ -568,6 +631,43 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 });
 
+// Função para verificar se existe um estado de extração salvo
+async function checkSavedExtractionState() {
+    try {
+        // Verifica se há um estado de extração salvo na chrome.storage.session
+        const result = await new Promise(resolve => {
+            chrome.storage.session.get(['commentExtractionState'], (data) => {
+                resolve(data);
+            });
+        });
+
+        if (result && result.commentExtractionState) {
+            console.log('Estado de extração encontrado:', result.commentExtractionState);
+
+            // Restaurar o estado salvo
+            extractionState = result.commentExtractionState;
+
+            // Se a extração estava em andamento mas foi interrompida pelo fechamento do popup,
+            // atualizamos o status para mostrar que ela foi interrompida
+            if (extractionState.isExtracting && !extractionState.complete) {
+                extractionState.isExtracting = false;
+                extractionState.error = 'Extração interrompida pelo fechamento do popup';
+                extractionState.complete = true;
+
+                // Salvar o estado atualizado
+                chrome.storage.session.set({ 'commentExtractionState': extractionState });
+            }
+
+            return true;
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Erro ao verificar estado de extração salvo:', error);
+        return false;
+    }
+}
+
 // Função principal para extrair comentários
 async function extractYouTubeComments(extractionConfig, progressCallback) {
     // Configurações padrão se não forem recebidas
@@ -578,10 +678,33 @@ async function extractYouTubeComments(extractionConfig, progressCallback) {
         expandReplies: extractionConfig?.expandReplies !== false
     };
 
+    // Inicializar o estado da extração
+    updateExtractionState({
+        isExtracting: true,
+        startTime: new Date().toISOString(),
+        progress: {
+            stage: 'loading',
+            total: config.scrollAttempts,
+            current: 0,
+            message: 'Iniciando extração de comentários...',
+            percentage: 0
+        },
+        config: config,
+        commentCount: 0,
+        error: null,
+        complete: false
+    });
+
     // Primeiro, vamos verificar se a seção de comentários está visível
     const commentsSection = document.querySelector('#comments');
     if (!commentsSection) {
-        throw new Error('Seção de comentários não encontrada. Verifique se os comentários estão habilitados para este vídeo.');
+        const errorMsg = 'Seção de comentários não encontrada. Verifique se os comentários estão habilitados para este vídeo.';
+        updateExtractionState({
+            isExtracting: false,
+            error: errorMsg,
+            complete: true
+        });
+        throw new Error(errorMsg);
     }
 
     // Se a seção de comentários não estiver visível, rolar para torná-la visível
@@ -591,80 +714,138 @@ async function extractYouTubeComments(extractionConfig, progressCallback) {
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    // Rolar para carregar comentários
-    await scrollToLoadComments(config.scrollAttempts, config.scrollDelay, progressCallback);
+    try {
+        // Rolar para carregar comentários
+        await scrollToLoadComments(config.scrollAttempts, config.scrollDelay, (progress) => {
+            // Atualizar o estado de progresso
+            updateExtractionState({
+                progress: {
+                    ...extractionState.progress,
+                    ...progress,
+                    percentage: Math.round((progress.current / progress.total) * 50) // 50% para a fase de carregamento
+                }
+            });
 
-    // Agora vamos coletar os comentários
-    const commentElements = document.querySelectorAll('ytd-comment-thread-renderer');
+            // Chamar o callback original se fornecido
+            if (progressCallback) progressCallback(progress);
+        });
 
-    if (commentElements.length === 0) {
-        throw new Error('Nenhum comentário encontrado. A página pode não ter carregado completamente ou os comentários estão desativados.');
-    }
+        // Agora vamos coletar os comentários
+        const commentElements = document.querySelectorAll('ytd-comment-thread-renderer');
 
-    console.log(`Encontrados ${commentElements.length} comentários. Processando...`);
+        if (commentElements.length === 0) {
+            const errorMsg = 'Nenhum comentário encontrado. A página pode não ter carregado completamente ou os comentários estão desativados.';
+            updateExtractionState({
+                isExtracting: false,
+                error: errorMsg,
+                complete: true
+            });
+            throw new Error(errorMsg);
+        }
 
-    if (progressCallback) {
-        progressCallback({
+        console.log(`Encontrados ${commentElements.length} comentários. Processando...`);
+
+        const processingProgress = {
             stage: 'processing',
             total: Math.min(commentElements.length, config.maxComments),
             current: 0,
-            message: `Processando ${Math.min(commentElements.length, config.maxComments)} comentários...`
+            message: `Processando ${Math.min(commentElements.length, config.maxComments)} comentários...`,
+            percentage: 50 // Começamos em 50% após o carregamento
+        };
+
+        updateExtractionState({
+            progress: processingProgress
         });
-    }
 
-    const comments = [];
-    let processedCount = 0;
-
-    // Para cada comentário principal
-    for (const commentElement of commentElements) {
-        try {
-            // Rolar para o comentário para garantir que ele esteja carregado
-            commentElement.scrollIntoView({ block: 'center' });
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Extrair o comentário principal
-            const commentData = extractCommentData(commentElement);
-
-            // Expandir e extrair respostas
-            if (config.expandReplies) {
-                await expandAndExtractReplies(commentElement, commentData);
-            }
-
-            comments.push(commentData);
-            processedCount++;
-
-            // Atualizar progresso
-            if (progressCallback && processedCount % 10 === 0) {
-                progressCallback({
-                    stage: 'processing',
-                    total: Math.min(commentElements.length, config.maxComments),
-                    current: processedCount,
-                    message: `Processados ${processedCount} de ${Math.min(commentElements.length, config.maxComments)} comentários...`
-                });
-            }
-
-            // Se coletamos um número máximo de comentários, podemos parar
-            if (comments.length >= config.maxComments) {
-                console.log(`Limite de ${config.maxComments} comentários atingido. Parando extração.`);
-                break;
-            }
-        } catch (commentError) {
-            console.warn('Erro ao extrair comentário:', commentError);
+        if (progressCallback) {
+            progressCallback(processingProgress);
         }
-    }
 
-    console.log(`Extração concluída. Total de ${comments.length} comentários processados.`);
+        const comments = [];
+        let processedCount = 0;
 
-    if (progressCallback) {
-        progressCallback({
+        // Para cada comentário principal
+        for (const commentElement of commentElements) {
+            try {
+                // Rolar para o comentário para garantir que ele esteja carregado
+                commentElement.scrollIntoView({ block: 'center' });
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Extrair o comentário principal
+                const commentData = extractCommentData(commentElement);
+
+                // Expandir e extrair respostas
+                if (config.expandReplies) {
+                    await expandAndExtractReplies(commentElement, commentData);
+                }
+
+                comments.push(commentData);
+                processedCount++;
+
+                // Atualizar progresso a cada 10 comentários ou no último
+                if (processedCount % 10 === 0 || processedCount === Math.min(commentElements.length, config.maxComments)) {
+                    const currentProgress = {
+                        stage: 'processing',
+                        total: Math.min(commentElements.length, config.maxComments),
+                        current: processedCount,
+                        message: `Processados ${processedCount} de ${Math.min(commentElements.length, config.maxComments)} comentários...`,
+                        percentage: 50 + Math.round((processedCount / Math.min(commentElements.length, config.maxComments)) * 50) // 50-100%
+                    };
+
+                    updateExtractionState({
+                        progress: currentProgress,
+                        commentCount: processedCount
+                    });
+
+                    // Atualizar progresso
+                    if (progressCallback) {
+                        progressCallback(currentProgress);
+                    }
+                }
+
+                // Se coletamos um número máximo de comentários, podemos parar
+                if (comments.length >= config.maxComments) {
+                    console.log(`Limite de ${config.maxComments} comentários atingido. Parando extração.`);
+                    break;
+                }
+            } catch (commentError) {
+                console.warn('Erro ao extrair comentário:', commentError);
+            }
+        }
+
+        console.log(`Extração concluída. Total de ${comments.length} comentários processados.`);
+
+        const completeProgress = {
             stage: 'complete',
             total: comments.length,
             current: comments.length,
-            message: `Extração concluída. ${comments.length} comentários processados.`
-        });
-    }
+            message: `Extração concluída. ${comments.length} comentários processados.`,
+            percentage: 100
+        };
 
-    return comments;
+        updateExtractionState({
+            isExtracting: false,
+            progress: completeProgress,
+            commentCount: comments.length,
+            complete: true
+        });
+
+        if (progressCallback) {
+            progressCallback(completeProgress);
+        }
+
+        return comments;
+    } catch (error) {
+        console.error('Erro durante a extração:', error);
+
+        updateExtractionState({
+            isExtracting: false,
+            error: error.message,
+            complete: true
+        });
+
+        throw error;
+    }
 }
 
 // Função para expandir e extrair respostas
