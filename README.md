@@ -61,6 +61,10 @@ Para usar a análise com IA, você precisará:
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
 
+## Novidades na versão 1.1.9
+
+- Revertidas alterações estéticas para garantir compatibilidade em diferentes ambientes
+
 ## Novidades na versão 1.1.8
 
 - **Navegação melhorada**: O botão flutuante agora desaparece automaticamente ao navegar para vídeos sem análise salva

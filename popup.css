@@ -8,9 +8,9 @@
 body {
   width: 600px;
   min-height: 400px;
-  background-color: #f0f0f0;
+  background-color: #f9f9f9;
   color: #333;  
-  padding: 10px;
+  padding: 0;
 }
 
 .container {
@@ -19,8 +19,8 @@ body {
   flex-direction: column;
   min-height: 400px;
   background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 12px 12px 12px 12px;
+  box-shadow: none;
+  border-radius: 0;
   overflow: hidden;
 }
 
