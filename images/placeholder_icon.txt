@@ -1,0 +1,13 @@
+Para que a extensão funcione corretamente, você precisará adicionar ícones nos seguintes formatos:
+
+1. icon16.png (16x16 pixels)
+2. icon48.png (48x48 pixels)
+3. icon128.png (128x128 pixels)
+
+Você pode:
+
+1. Usar o script create_icons.js com Node.js e a biblioteca canvas para gerar automaticamente
+2. Criar seus próprios ícones personalizados e salvá-los com esses nomes
+3. Encontrar ícones gratuitos de balões de comentário ou análise de dados
+
+Os ícones devem ser colocados nesta pasta (images/). 

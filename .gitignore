@@ -1,0 +1,33 @@
+# Arquivos de configuração sensíveis
+api-keys.json
+
+# Arquivos de ambiente
+.env
+
+# Arquivos temporários
+*.tmp
+*.temp
+*.bak
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de log
+*.log
+
+# Diretórios de dependências
+node_modules/
+
+# Arquivos de build
+dist/
+build/
+
+# Arquivos temporários do editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos de backup
+*.js.new 

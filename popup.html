@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Comments Extractor</title>
+    <link rel="stylesheet" href="popup.css">
+    <!-- Adicionando Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header-container">
+                <div class="status-indicator" id="status-indicator" title="Aguardando...">
+                    <span class="status-dot"></span>
+                </div>
+                <h1>YouTube Comments Extractor</h1>
+                <button id="toggle-config" class="config-icon" title="Configurações">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Painel de configuração -->
+        <div id="config-panel" class="config-panel">
+            <div class="config-section">
+                <h3>Configurações da API</h3>
+                <div class="config-item">
+                    <label for="api-key-input">OpenAI API Key</label>
+                    <input type="password" id="api-key-input" placeholder="Insira sua API Key aqui">
+                    <button id="save-api-key" class="small-btn">Salvar</button>
+                </div>
+                <div class="config-item">
+                    <label for="model-select">Modelo</label>
+                    <select id="model-select">
+                        <!-- Opções serão preenchidas pelo JavaScript -->
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label for="max-comments">Máximo de comentários</label>
+                    <input type="number" id="max-comments" min="10" max="1000" step="10" value="100">
+                </div>
+                <div class="config-item">
+                    <button id="test-connection" class="small-btn">Testar Conexão</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de ação principal -->
+        <div class="main-content">
+            <div class="action-area">
+                <button id="extract-btn" class="primary-btn">Extrair e Analisar Comentários</button>
+            </div>
+
+            <!-- Container de progresso -->
+            <div id="progress-container" class="progress-container" style="display: none;">
+                <div class="progress-bar-wrapper">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="progress-text" class="progress-text">Iniciando extração...</div>
+            </div>
+
+            <!-- Container de erro -->
+            <div id="error-container" class="error-container" style="display: none;">
+                <h3>Ocorreu um erro</h3>
+                <p id="error-message">Mensagem de erro aqui</p>
+                <div class="error-actions">
+                    <button id="retry-button" class="small-btn">Tentar Novamente</button>
+                    <button id="reload-button" class="small-btn">Recarregar Página</button>
+                </div>
+            </div>
+
+            <!-- Container de resultados -->
+            <div class="results-container">
+                <!-- Container de tabs -->
+                <div id="tabs-container" class="tabs-container"></div>
+
+                <!-- Área de análise -->
+                <div id="analysis-results" class="analysis-results"></div>
+
+                <!-- Lista de comentários -->
+                <div id="comments-list" class="comments-list"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; <span id="year"></span> - YouTube Comments Extractor - v1.0</p>
+        </footer>
+    </div>
+
+    <!-- Carrega os scripts -->
+    <script src="config.js"></script>
+    <script src="openai-service.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>
