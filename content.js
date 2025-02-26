@@ -4,12 +4,523 @@ chrome.runtime.sendMessage({ action: 'contentScriptReady' }, function (response)
     console.log('Background script respondeu:', response);
 });
 
+// Garantir acesso ao localStorage entre contextos
+try {
+    // Testar se conseguimos acessar o localStorage da página
+    const testKey = 'youtube_comments_extractor_test';
+    window.localStorage.setItem(testKey, 'test');
+    const testValue = window.localStorage.getItem(testKey);
+    window.localStorage.removeItem(testKey);
+
+    if (testValue === 'test') {
+        console.log('Acesso ao localStorage confirmado');
+    } else {
+        console.warn('Problema no acesso ao localStorage');
+    }
+} catch (error) {
+    console.error('Erro ao acessar localStorage:', error);
+
+    // Injetar script para comunicação com localStorage
+    const script = document.createElement('script');
+    script.textContent = `
+        // Script injetado pelo YouTube Comments Extractor
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'YOUTUBE_COMMENTS_EXTRACTOR') {
+                const action = event.data.action;
+                
+                try {
+                    if (action === 'getItem') {
+                        const value = localStorage.getItem(event.data.key);
+                        window.postMessage({
+                            type: 'YOUTUBE_COMMENTS_EXTRACTOR_RESPONSE',
+                            action: 'getItem',
+                            key: event.data.key,
+                            value: value
+                        }, '*');
+                    } else if (action === 'setItem') {
+                        localStorage.setItem(event.data.key, event.data.value);
+                        window.postMessage({
+                            type: 'YOUTUBE_COMMENTS_EXTRACTOR_RESPONSE',
+                            action: 'setItem',
+                            success: true
+                        }, '*');
+                    }
+                } catch (error) {
+                    window.postMessage({
+                        type: 'YOUTUBE_COMMENTS_EXTRACTOR_RESPONSE',
+                        action: action,
+                        error: error.message
+                    }, '*');
+                }
+            }
+        });
+        console.log('YouTube Comments Extractor: Script de acesso ao localStorage injetado');
+    `;
+
+    document.documentElement.appendChild(script);
+    script.remove();
+
+    // Configurar listeners para resposta
+    window.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'YOUTUBE_COMMENTS_EXTRACTOR_RESPONSE') {
+            console.log('Resposta do script injetado:', event.data);
+        }
+    });
+}
+
+// Estado da aplicação
+let appState = {
+    hasStoredAnalysis: false,
+    videoId: null,
+    analysisButtonInjected: false,
+    injectionInterval: null,
+    injectionAttempts: 0
+};
+
+// Verifica se temos análise salva no localStorage
+function checkForStoredAnalysis() {
+    try {
+        console.log('Verificando análises salvas para o vídeo:', appState.videoId);
+
+        if (!appState.videoId) {
+            console.error('VideoId não definido, não é possível verificar análises');
+            appState.hasStoredAnalysis = false;
+            return false;
+        }
+
+        // Obter todas as análises salvas
+        let useInjectedScript = false;
+        let savedData;
+
+        // Primeiro tentar acessar diretamente
+        try {
+            savedData = localStorage.getItem('youtubeCommentsAnalyses');
+            console.log('Dados obtidos do localStorage:', savedData ? 'sim (tamanho: ' + savedData.length + ')' : 'não');
+        } catch (directError) {
+            console.warn('Não foi possível acessar localStorage diretamente:', directError);
+            useInjectedScript = true;
+        }
+
+        // Se não conseguir acesso direto, usar o script injetado
+        if (useInjectedScript) {
+            console.log('Tentando acessar localStorage via script injetado');
+            window.postMessage({
+                type: 'YOUTUBE_COMMENTS_EXTRACTOR',
+                action: 'getItem',
+                key: 'youtubeCommentsAnalyses'
+            }, '*');
+
+            // Configurar um listener específico para esta solicitação
+            const messageHandler = function (event) {
+                if (event.data &&
+                    event.data.type === 'YOUTUBE_COMMENTS_EXTRACTOR_RESPONSE' &&
+                    event.data.action === 'getItem' &&
+                    event.data.key === 'youtubeCommentsAnalyses') {
+
+                    console.log('Resposta recebida do script injetado para youtubeCommentsAnalyses');
+
+                    // Remover o listener após receber a resposta
+                    window.removeEventListener('message', messageHandler);
+
+                    if (event.data.value) {
+                        try {
+                            const analyses = JSON.parse(event.data.value);
+                            appState.hasStoredAnalysis = analyses.hasOwnProperty(appState.videoId);
+                            console.log('Análise para o vídeo encontrada via script injetado:', appState.hasStoredAnalysis);
+
+                            // Tentar injetar o botão se temos análise
+                            if (appState.hasStoredAnalysis && !appState.analysisButtonInjected) {
+                                tryInjectAnalysisButton();
+                            }
+                        } catch (parseError) {
+                            console.error('Erro ao analisar dados do localStorage:', parseError);
+                            appState.hasStoredAnalysis = false;
+                        }
+                    } else {
+                        appState.hasStoredAnalysis = false;
+                    }
+                }
+            };
+
+            // Adicionar o listener
+            window.addEventListener('message', messageHandler);
+
+            // Timeout para remover o listener se não houver resposta
+            setTimeout(() => {
+                window.removeEventListener('message', messageHandler);
+            }, 3000);
+
+            return false;
+        }
+
+        if (!savedData) {
+            console.log('Nenhum dado encontrado no localStorage');
+            appState.hasStoredAnalysis = false;
+            return false;
+        }
+
+        // Parsear os dados
+        try {
+            const savedAnalyses = JSON.parse(savedData);
+            console.log('Análises salvas:', Object.keys(savedAnalyses).length);
+
+            // Verificar se o ID deste vídeo está nas análises
+            appState.hasStoredAnalysis = savedAnalyses.hasOwnProperty(appState.videoId);
+            console.log('Este vídeo tem análise salva?', appState.hasStoredAnalysis);
+
+            // Notificar o content script para controlar o botão
+            if (appState.hasStoredAnalysis) {
+                chrome.runtime.sendMessage({
+                    action: 'hasStoredAnalysis',
+                    videoId: appState.videoId,
+                    hasStoredAnalysis: true
+                }).catch(err => console.log('Erro ao notificar análise salva:', err));
+            }
+
+            return appState.hasStoredAnalysis;
+        } catch (parseError) {
+            console.error('Erro ao analisar dados do localStorage:', parseError);
+            appState.hasStoredAnalysis = false;
+            return false;
+        }
+    } catch (error) {
+        console.error('Erro ao verificar análises salvas:', error);
+        appState.hasStoredAnalysis = false;
+        return false;
+    }
+}
+
+// Verifica periodicamente se o botão de análise deve ser injetado
+function setupObserver() {
+    // Verificar se estamos em uma página de vídeo
+    const url = window.location.href;
+    if (!url.includes('youtube.com/watch')) {
+        console.log('Não estamos em uma página de vídeo do YouTube');
+        return;
+    }
+
+    // Extrair videoId da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    appState.videoId = urlParams.get('v');
+
+    // Se não temos videoId, não podemos continuar
+    if (!appState.videoId) {
+        console.log('Não foi possível extrair o ID do vídeo da URL');
+        return;
+    }
+
+    console.log('ID do vídeo atual:', appState.videoId);
+
+    // Redefinir o estado de injeção ao trocar de vídeo
+    appState.analysisButtonInjected = false;
+
+    // Verificar se temos análise no localStorage
+    checkForStoredAnalysis();
+
+    // Se temos análise salva, configuramos uma verificação repetida
+    // para garantir que o botão seja injetado quando a página terminar de carregar
+    if (appState.hasStoredAnalysis) {
+        console.log('Há análise salva, configurando injeção periódica do botão');
+
+        // Limpar qualquer intervalo existente
+        if (appState.injectionInterval) {
+            clearInterval(appState.injectionInterval);
+        }
+
+        // Tentativa imediata
+        tryInjectAnalysisButton();
+
+        // Configurar tentativas periódicas por 30 segundos (15 tentativas a cada 2 segundos)
+        appState.injectionAttempts = 0;
+        appState.injectionInterval = setInterval(() => {
+            appState.injectionAttempts++;
+
+            // Se já injetamos ou tentamos muitas vezes, parar
+            if (appState.analysisButtonInjected || appState.injectionAttempts > 20) {
+                console.log(
+                    appState.analysisButtonInjected
+                        ? 'Botão já injetado, parando tentativas'
+                        : 'Máximo de tentativas atingido'
+                );
+                clearInterval(appState.injectionInterval);
+                return;
+            }
+
+            console.log(`Tentativa ${appState.injectionAttempts} de injetar o botão...`);
+            tryInjectAnalysisButton();
+        }, 2000); // Tentar a cada 2 segundos
+    }
+
+    // Configurar um observador para detectar mudanças na página
+    // especialmente o carregamento da área de inscrição
+    const observer = new MutationObserver(function (mutations) {
+        if (!appState.analysisButtonInjected && appState.hasStoredAnalysis) {
+            console.log('Mudança detectada no DOM, tentando injetar botão...');
+            tryInjectAnalysisButton();
+        }
+    });
+
+    // Iniciar a observação do DOM para mudanças
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Adicionar funções de debug para ajudar na inspeção de elementos
+function debugElementInfo(element, label) {
+    if (!element) {
+        console.error(`${label}: elemento não existe`);
+        return;
+    }
+
+    console.log(`${label}:`, {
+        tag: element.tagName,
+        id: element.id,
+        classList: Array.from(element.classList),
+        childrenCount: element.children.length,
+        innerText: element.innerText ? element.innerText.substring(0, 50) : '',
+        attributes: Array.from(element.attributes).map(attr => `${attr.name}="${attr.value}"`).join(', ')
+    });
+}
+
+// Função para detectar elementos visíveis em posições específicas que podem receber nosso botão
+function scanForPotentialContainers() {
+    console.log('Escaneando possíveis containers para o botão de análise...');
+
+    // Lista de seletores conhecidos que poderiam conter o botão
+    const selectors = [
+        '#top-row',
+        '#meta',
+        '#meta-contents',
+        'ytd-subscribe-button-renderer',
+        'ytd-menu-renderer',
+        '#buttons.ytd-video-primary-info-renderer',
+        '#info-contents'
+    ];
+
+    // Testar cada seletor
+    selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        console.log(`Seletor '${selector}': ${elements.length} elementos encontrados`);
+
+        elements.forEach((el, index) => {
+            if (el.offsetParent !== null) { // Element is visible
+                debugElementInfo(el, `${selector} [${index}] (visível)`);
+            }
+        });
+    });
+
+    // Procurar elementos com texto "Inscrever-se" (botão de inscrição)
+    const allElements = document.querySelectorAll('button, [role="button"]');
+    const subscribeButtons = Array.from(allElements).filter(el =>
+        el.innerText && el.innerText.trim().toLowerCase().includes('inscrever') &&
+        el.offsetParent !== null
+    );
+
+    console.log(`Encontrados ${subscribeButtons.length} elementos relacionados a "Inscrever-se":`);
+    subscribeButtons.forEach((el, index) => {
+        debugElementInfo(el, `Botão "Inscrever-se" [${index}]`);
+
+        // Examinar os pais do elemento para encontrar possíveis contêineres
+        let parent = el.parentElement;
+        let level = 1;
+        while (parent && level <= 5) {
+            debugElementInfo(parent, `Pai nível ${level} do botão "Inscrever-se" [${index}]`);
+            parent = parent.parentElement;
+            level++;
+        }
+    });
+}
+
+// Tenta injetar o botão de análise ao lado do botão de inscrição
+function tryInjectAnalysisButton() {
+    // Verificar se já existe o botão
+    if (appState.analysisButtonInjected) return;
+
+    // Se não temos análise salva, não precisa mostrar o botão
+    if (!appState.hasStoredAnalysis) {
+        console.log('Não há análise salva para este vídeo, botão não será injetado');
+        return;
+    }
+
+    console.log('Tentando injetar botão de análise flutuante...');
+
+    // Verificar se nosso botão já existe (pode acontecer em alguns casos)
+    const existingButton = document.getElementById('comments-analysis-button');
+    if (existingButton) {
+        console.log('Botão já existe, não será injetado novamente');
+        appState.analysisButtonInjected = true;
+        return;
+    }
+
+    try {
+        // Criar um contêiner flutuante
+        const floatingContainer = document.createElement('div');
+        floatingContainer.id = 'yt-comments-analysis-container';
+        floatingContainer.style.position = 'fixed';
+        floatingContainer.style.bottom = '20px';
+        floatingContainer.style.right = '20px';
+        floatingContainer.style.zIndex = '9999';
+        floatingContainer.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+        floatingContainer.style.borderRadius = '4px';
+        floatingContainer.style.overflow = 'hidden';
+
+        // Criar o botão de análise
+        const analysisButton = document.createElement('button');
+        analysisButton.id = 'comments-analysis-button';
+        analysisButton.className = 'yt-analysis-button';
+        analysisButton.textContent = 'Análise de Comentários';
+        analysisButton.title = 'Ver análise de comentários deste vídeo';
+
+        // Estilizar o botão para parecer com a interface do YouTube
+        analysisButton.style.backgroundColor = '#cc0000';
+        analysisButton.style.color = 'white';
+        analysisButton.style.border = 'none';
+        analysisButton.style.padding = '10px 16px';
+        analysisButton.style.fontSize = '14px';
+        analysisButton.style.fontWeight = '500';
+        analysisButton.style.cursor = 'pointer';
+        analysisButton.style.display = 'flex';
+        analysisButton.style.alignItems = 'center';
+        analysisButton.style.justifyContent = 'center';
+        analysisButton.style.width = '100%';
+        analysisButton.style.height = '100%';
+
+        // Adicionar hover effect
+        analysisButton.onmouseover = function () {
+            this.style.backgroundColor = '#aa0000';
+        };
+        analysisButton.onmouseout = function () {
+            this.style.backgroundColor = '#cc0000';
+        };
+
+        // Adicionar evento de clique para abrir a extensão
+        analysisButton.addEventListener('click', function () {
+            chrome.runtime.sendMessage({
+                action: 'openPopupWithSavedAnalysis',
+                videoId: appState.videoId
+            });
+        });
+
+        // Adicionar o botão ao contêiner
+        floatingContainer.appendChild(analysisButton);
+
+        // Adicionar o contêiner ao documento
+        document.body.appendChild(floatingContainer);
+
+        // Marcar que o botão foi injetado
+        appState.analysisButtonInjected = true;
+        console.log('Botão de análise flutuante injetado com sucesso');
+
+    } catch (error) {
+        console.error('Erro ao injetar o botão flutuante:', error);
+    }
+}
+
+// Configurar o observador quando a página carregar
+window.addEventListener('load', setupObserver);
+
+// Detectar mudanças na URL (navegação entre vídeos)
+let lastUrl = location.href;
+const urlObserver = new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+        lastUrl = url;
+        console.log('Detectada navegação para nova URL:', url);
+
+        // Resetar o estado
+        appState.analysisButtonInjected = false;
+
+        // Limpar qualquer intervalo existente
+        if (appState.injectionInterval) {
+            clearInterval(appState.injectionInterval);
+            appState.injectionInterval = null;
+        }
+
+        // Reconfigurar para o novo vídeo
+        setTimeout(() => {
+            console.log('Reconfigurando para novo vídeo após navegação');
+            setupObserver();
+        }, 1000); // Adicionamos um pequeno atraso para garantir que a página tenha carregado
+    }
+});
+
+// Iniciar observação de mudanças no DOM que possam indicar navegação
+urlObserver.observe(document, { subtree: true, childList: true });
+
+// Também verificar por alterações na URL diretamente usando hashchange e popstate
+window.addEventListener('hashchange', () => {
+    if (location.href !== lastUrl) {
+        console.log('Detectada mudança de URL via hashchange');
+        lastUrl = location.href;
+        appState.analysisButtonInjected = false;
+        setTimeout(setupObserver, 1000);
+    }
+});
+
+window.addEventListener('popstate', () => {
+    if (location.href !== lastUrl) {
+        console.log('Detectada mudança de URL via popstate');
+        lastUrl = location.href;
+        appState.analysisButtonInjected = false;
+        setTimeout(setupObserver, 1000);
+    }
+});
+
 // Escutar mensagens do popup
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     // Responder a pings do background script
     if (request.action === 'ping') {
         console.log('Ping recebido');
         sendResponse({ status: 'active' });
+        return true;
+    }
+
+    if (request.action === 'analysisComplete' || request.action === 'hasStoredAnalysis') {
+        console.log('Atualizando estado de análise:', request);
+
+        // Atualizar estado
+        appState.hasStoredAnalysis = request.hasStoredAnalysis;
+        if (request.videoId) {
+            appState.videoId = request.videoId;
+        }
+
+        // Reiniciar o estado de injeção do botão
+        appState.analysisButtonInjected = false;
+
+        // Limpar qualquer intervalo anterior
+        if (appState.injectionInterval) {
+            clearInterval(appState.injectionInterval);
+            appState.injectionInterval = null;
+        }
+
+        // Configurar tentativas periódicas
+        if (appState.hasStoredAnalysis) {
+            console.log('Preparando-se para injetar o botão de análise');
+
+            // Tentativa imediata
+            tryInjectAnalysisButton();
+
+            // Configurar tentativas periódicas por 30 segundos
+            appState.injectionAttempts = 0;
+            appState.injectionInterval = setInterval(() => {
+                if (appState.analysisButtonInjected || appState.injectionAttempts >= 15) {
+                    clearInterval(appState.injectionInterval);
+                    appState.injectionInterval = null;
+
+                    if (appState.analysisButtonInjected) {
+                        console.log('Botão injetado com sucesso após tentativas');
+                    } else {
+                        console.error('Falha ao injetar botão após várias tentativas');
+                    }
+                    return;
+                }
+
+                appState.injectionAttempts++;
+                console.log(`Tentativa ${appState.injectionAttempts} de injetar o botão...`);
+                tryInjectAnalysisButton();
+            }, 2000);
+        }
+
+        sendResponse({ status: 'updated', buttonInjected: appState.analysisButtonInjected });
         return true;
     }
 

@@ -74,6 +74,12 @@ async function init() {
     // Verificar se o content script está pronto
     await checkContentScriptStatus();
 
+    // Verificar se já existe uma análise para o vídeo atual
+    await checkExistingAnalysis();
+
+    // Verificar se o popup foi aberto para mostrar uma análise específica
+    await checkForAnalysisToLoad();
+
     // Configurar event listeners
     setupEventListeners();
 
@@ -611,6 +617,123 @@ function displayResults() {
 
     // Exibir estatísticas
     displayStatistics();
+
+    // Salvar análise no localStorage
+    saveAnalysisResults();
+}
+
+// Salva os resultados da análise no localStorage
+function saveAnalysisResults() {
+    if (!activeTab || !activeTab.url || !categorizedComments) return;
+
+    try {
+        // Obter o ID do vídeo para usar como chave
+        const videoId = getYouTubeVideoId(activeTab.url);
+        if (!videoId) {
+            console.error('Não foi possível extrair o ID do vídeo da URL:', activeTab.url);
+            return;
+        }
+
+        console.log('Salvando análise para o vídeo:', videoId);
+
+        // Preparar os dados para salvar
+        const analysisData = {
+            timestamp: new Date().toISOString(),
+            videoId: videoId,
+            videoUrl: activeTab.url,
+            videoTitle: activeTab.title || 'Vídeo do YouTube',
+            extractedCount: extractedComments.length,
+            categorizedComments: {}
+        };
+
+        // Salvar apenas os resultados de análise e contagens, não os comentários completos para economizar espaço
+        for (const categoryId in categorizedComments) {
+            const category = categorizedComments[categoryId];
+            analysisData.categorizedComments[categoryId] = {
+                title: category.title,
+                description: category.description,
+                commentCount: category.comments ? category.comments.length : 0,
+                analysis: category.analysis ? category.analysis.result : null
+            };
+        }
+
+        // Obter análises existentes ou inicializar novo objeto
+        let savedAnalyses = {};
+        try {
+            const savedData = localStorage.getItem('youtubeCommentsAnalyses');
+            if (savedData) {
+                savedAnalyses = JSON.parse(savedData);
+            }
+            console.log('Análises existentes:', Object.keys(savedAnalyses).length);
+        } catch (parseError) {
+            console.error('Erro ao analisar dados salvos, criando novo objeto:', parseError);
+        }
+
+        // Adicionar/atualizar a análise atual
+        savedAnalyses[videoId] = analysisData;
+
+        // Salvar de volta ao localStorage
+        const jsonData = JSON.stringify(savedAnalyses);
+        localStorage.setItem('youtubeCommentsAnalyses', jsonData);
+        console.log('Análise salva no localStorage com sucesso. Tamanho dos dados:', jsonData.length);
+
+        // Verificar se os dados foram salvos corretamente
+        const verificacao = localStorage.getItem('youtubeCommentsAnalyses');
+        if (verificacao) {
+            const dadosVerificados = JSON.parse(verificacao);
+            if (dadosVerificados[videoId]) {
+                console.log('Verificação positiva: dados salvos com sucesso');
+            } else {
+                console.error('Verificação falhou: vídeo não encontrado nos dados salvos');
+            }
+        } else {
+            console.error('Verificação falhou: nenhum dado encontrado após salvar');
+        }
+
+        // Notificar o content script para adicionar o botão
+        chrome.tabs.sendMessage(activeTab.id, {
+            action: 'analysisComplete',
+            videoId: videoId,
+            hasStoredAnalysis: true
+        }, response => {
+            if (response) {
+                console.log('Content script respondeu:', response);
+            } else if (chrome.runtime.lastError) {
+                console.error('Erro ao notificar content script:', chrome.runtime.lastError);
+            }
+        });
+
+        console.log('Content script notificado sobre análise salva para o vídeo:', videoId);
+    } catch (error) {
+        console.error('Erro ao salvar análise:', error);
+    }
+}
+
+// Verifica se já existe uma análise para o vídeo atual
+async function checkExistingAnalysis() {
+    if (!activeTab || !activeTab.url) return false;
+
+    try {
+        const videoId = getYouTubeVideoId(activeTab.url);
+        if (!videoId) return false;
+
+        const savedAnalyses = JSON.parse(localStorage.getItem('youtubeCommentsAnalyses') || '{}');
+        const hasAnalysis = savedAnalyses.hasOwnProperty(videoId);
+
+        // Notificar o content script para controlar o botão
+        if (hasAnalysis) {
+            chrome.tabs.sendMessage(activeTab.id, {
+                action: 'hasStoredAnalysis',
+                videoId: videoId,
+                hasStoredAnalysis: true
+            });
+        }
+
+        return hasAnalysis;
+    } catch (error) {
+        console.error('Erro ao verificar análise existente:', error);
+        return false;
+    }
 }
 
 // Exibe estatísticas sobre os comentários extraídos
@@ -982,4 +1105,165 @@ function clearResults() {
     elements.analysisResults.innerHTML = '';
     elements.tabsContainer.innerHTML = '';
     hideError();
+}
+
+// Carregar os dados de uma análise salva
+async function loadSavedAnalysis(videoId) {
+    if (!videoId) {
+        if (!activeTab || !activeTab.url) return null;
+        videoId = getYouTubeVideoId(activeTab.url);
+        if (!videoId) return null;
+    }
+
+    try {
+        const savedAnalyses = JSON.parse(localStorage.getItem('youtubeCommentsAnalyses') || '{}');
+        return savedAnalyses[videoId] || null;
+    } catch (error) {
+        console.error('Erro ao carregar análise salva:', error);
+        return null;
+    }
+}
+
+// Mostrar o modal com a análise salva
+async function showSavedAnalysisModal(analysisData) {
+    if (!analysisData) {
+        const videoId = getYouTubeVideoId(activeTab.url);
+        analysisData = await loadSavedAnalysis(videoId);
+        if (!analysisData) return;
+    }
+
+    // Limpar resultados anteriores
+    clearResults();
+
+    // Adicionar indicador de análise carregada
+    const loadedInfo = document.createElement('div');
+    loadedInfo.className = 'loaded-analysis-info';
+
+    // Formatar a data
+    const analysisDate = new Date(analysisData.timestamp);
+    const formattedDate = analysisDate.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    loadedInfo.innerHTML = `
+        <div class="loaded-header">
+            <span class="loaded-timestamp">Análise realizada em: ${formattedDate}</span>
+            <button id="new-analysis-btn" class="small-btn"><i class="fa-solid fa-refresh"></i> Nova Análise</button>
+        </div>
+        <h3 class="loaded-title">${analysisData.videoTitle}</h3>
+        <p class="loaded-stats">Total de comentários: ${analysisData.extractedCount}</p>
+    `;
+
+    elements.analysisResults.appendChild(loadedInfo);
+
+    // Adicionar botão para atualizar a análise
+    document.getElementById('new-analysis-btn').addEventListener('click', () => {
+        clearResults();
+        extractAndProcessComments();
+    });
+
+    // Criar tabs para as categorias
+    const tabsList = document.createElement('ul');
+    tabsList.className = 'tabs-list';
+    elements.tabsContainer.appendChild(tabsList);
+
+    // Container para o conteúdo das tabs
+    const tabsContent = document.createElement('div');
+    tabsContent.className = 'tabs-content';
+    elements.analysisResults.appendChild(tabsContent);
+
+    // Para cada categoria, criar uma tab e seu conteúdo
+    let firstTab = null;
+
+    for (const categoryId in analysisData.categorizedComments) {
+        const category = analysisData.categorizedComments[categoryId];
+
+        // Criar tab
+        const tab = document.createElement('li');
+        tab.className = 'tab';
+        tab.setAttribute('data-tab', categoryId);
+        tab.textContent = category.title;
+        tabsList.appendChild(tab);
+
+        if (!firstTab) firstTab = tab;
+
+        // Criar conteúdo da tab
+        const tabContent = document.createElement('div');
+        tabContent.className = 'tab-content';
+        tabContent.id = `tab-${categoryId}`;
+        tabContent.style.display = 'none';
+
+        // Adicionar descrição da categoria
+        const description = document.createElement('p');
+        description.className = 'category-description';
+        description.textContent = category.description;
+        tabContent.appendChild(description);
+
+        // Adicionar resultados da análise
+        if (category.analysis) {
+            const analysisDiv = document.createElement('div');
+            analysisDiv.className = 'analysis-result';
+            analysisDiv.innerHTML = formatAnalysisResult(category.analysis);
+            tabContent.appendChild(analysisDiv);
+        }
+
+        // Adicionar contador de comentários
+        const commentsInfo = document.createElement('p');
+        commentsInfo.className = 'comments-info';
+        commentsInfo.textContent = `Comentários nesta categoria: ${category.commentCount}`;
+        tabContent.appendChild(commentsInfo);
+
+        tabsContent.appendChild(tabContent);
+    }
+
+    // Adicionar event listeners para as tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Desativar todas as tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+            // Ativar a tab clicada
+            tab.classList.add('active');
+            document.getElementById(`tab-${tab.getAttribute('data-tab')}`).style.display = 'block';
+        });
+    });
+
+    // Ativar a primeira tab por padrão
+    if (firstTab) {
+        firstTab.click();
+    }
+}
+
+// Verificar se o popup foi aberto para mostrar uma análise específica
+async function checkForAnalysisToLoad() {
+    try {
+        // Verificar no chrome.storage.session se há um videoId para carregar
+        const result = await new Promise(resolve => {
+            chrome.storage.session.get(['loadAnalysisForVideo'], (data) => {
+                resolve(data);
+            });
+        });
+
+        if (result && result.loadAnalysisForVideo) {
+            console.log('Carregando análise para o vídeo:', result.loadAnalysisForVideo);
+
+            // Carregar a análise para este vídeo
+            const analysisData = await loadSavedAnalysis(result.loadAnalysisForVideo);
+
+            // Se houver dados, mostrar o modal
+            if (analysisData) {
+                await showSavedAnalysisModal(analysisData);
+            }
+
+            // Limpar o flag após uso
+            chrome.storage.session.remove(['loadAnalysisForVideo']);
+        }
+    } catch (error) {
+        console.error('Erro ao verificar análise para carregar:', error);
+    }
 } 

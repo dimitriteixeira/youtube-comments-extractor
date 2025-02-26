@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
   "name": "YouTube Comments Extractor",
-  "version": "1.0",
-  "description": "Extrai e analisa comentários do YouTube para identificar padrões e resumir feedback",
+  "version": "1.1.0",
+  "description": "Extrai e analisa comentários de vídeos do YouTube usando a API da OpenAI",
   "permissions": [
     "activeTab",
     "scripting",
     "storage"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*"
+    "https://www.youtube.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -26,9 +26,8 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/watch*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"]
     }
   ],
   "background": {

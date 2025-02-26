@@ -36,45 +36,55 @@ chrome.action.onClicked.addListener(function (tab) {
 
 // Inicializamos o contexto de mensagens para comunicação com os content scripts
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === 'getVideoInfo') {
-        // Se o content script solicitar informações do vídeo
-        if (sender.tab) {
-            const videoId = new URL(sender.tab.url).searchParams.get('v');
-            if (videoId) {
-                sendResponse({ videoId: videoId });
+    console.log('Mensagem recebida no background:', request);
+
+    // Verificar content script
+    if (request.action === 'checkContentScript') {
+        const tabId = request.tabId;
+
+        chrome.tabs.sendMessage(tabId, { action: 'ping' }, function (response) {
+            if (chrome.runtime.lastError) {
+                // Content script não está injetado, tentamos injetá-lo
+                console.log('Content script não injetado, tentando injetar...');
+
+                chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    files: ['content.js']
+                }).then(() => {
+                    console.log('Content script injetado com sucesso');
+                    sendResponse({ status: 'injected' });
+                }).catch(error => {
+                    console.error('Erro ao injetar content script:', error);
+                    sendResponse({ status: 'error', error: error.message });
+                });
             } else {
-                sendResponse({ error: 'ID do vídeo não encontrado' });
+                console.log('Content script já está ativo');
+                sendResponse({ status: 'active' });
             }
-        }
-        return true;
-    } else if (request.action === 'contentScriptReady') {
-        // Content script está pronto
-        console.log('Content script está ativo na tab:', sender.tab.id);
-        sendResponse({ status: 'acknowledged' });
-        return true;
-    } else if (request.action === 'checkContentScript') {
-        // Checar se o content script está ativo em uma tab específica
-        if (request.tabId) {
-            chrome.tabs.sendMessage(request.tabId, { action: 'ping' }, function (response) {
-                if (chrome.runtime.lastError) {
-                    console.log('Content script não está ativo na tab:', request.tabId);
-                    // Injetar o content script se não estiver ativo
-                    chrome.scripting.executeScript({
-                        target: { tabId: request.tabId },
-                        files: ['content.js']
-                    }).then(() => {
-                        console.log('Content script injetado na tab:', request.tabId);
-                        sendResponse({ status: 'injected' });
-                    }).catch(err => {
-                        console.error('Erro ao injetar content script:', err);
-                        sendResponse({ status: 'error', error: err.message });
-                    });
-                } else {
-                    console.log('Content script já está ativo na tab:', request.tabId);
-                    sendResponse({ status: 'active' });
-                }
-            });
-            return true;
-        }
+        });
+
+        return true; // Mantém o canal de mensagem aberto para resposta assíncrona
+    }
+
+    // Notificação de que o content script está pronto
+    if (request.action === 'contentScriptReady') {
+        console.log('Content script está pronto na tab ' + sender.tab.id);
+        sendResponse({ acknowledged: true });
+        return false;
+    }
+
+    // Abrir popup com análise salva
+    if (request.action === 'openPopupWithSavedAnalysis') {
+        const videoId = request.videoId;
+        console.log('Solicitação para abrir popup com análise salva para o vídeo:', videoId);
+
+        // Armazenamos o videoId para que o popup saiba qual análise carregar
+        chrome.storage.session.set({ 'loadAnalysisForVideo': videoId }, function () {
+            // Abrimos o popup diretamente
+            chrome.action.openPopup();
+            sendResponse({ status: 'opening_popup' });
+        });
+
+        return true; // Mantém o canal de mensagem aberto para resposta assíncrona
     }
 }); 
