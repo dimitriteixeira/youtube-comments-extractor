@@ -163,10 +163,16 @@ function checkForStoredAnalysis() {
                     if (event.data.value) {
                         try {
                             const analyses = JSON.parse(event.data.value);
-                            appState.hasStoredAnalysis = analyses.hasOwnProperty(appState.videoId);
-                            console.log('Análise para o vídeo encontrada via script injetado:', appState.hasStoredAnalysis);
+                            // Verificar se existe análise para este vídeo E se ela contém dados válidos
+                            const hasValidAnalysis = analyses.hasOwnProperty(appState.videoId) &&
+                                analyses[appState.videoId] &&
+                                analyses[appState.videoId].categorizedComments &&
+                                Object.keys(analyses[appState.videoId].categorizedComments).length > 0;
 
-                            // Tentar injetar o botão se temos análise
+                            appState.hasStoredAnalysis = hasValidAnalysis;
+                            console.log('Análise válida para o vídeo encontrada via script injetado:', appState.hasStoredAnalysis);
+
+                            // Tentar injetar o botão apenas se temos análise válida
                             if (appState.hasStoredAnalysis && !appState.analysisButtonInjected) {
                                 tryInjectAnalysisButton();
                             }
@@ -202,11 +208,16 @@ function checkForStoredAnalysis() {
             const savedAnalyses = JSON.parse(savedData);
             console.log('Análises salvas:', Object.keys(savedAnalyses).length);
 
-            // Verificar se o ID deste vídeo está nas análises
-            appState.hasStoredAnalysis = savedAnalyses.hasOwnProperty(appState.videoId);
-            console.log('Este vídeo tem análise salva?', appState.hasStoredAnalysis);
+            // Verificar se o ID deste vídeo está nas análises E se contém dados válidos
+            const hasValidAnalysis = savedAnalyses.hasOwnProperty(appState.videoId) &&
+                savedAnalyses[appState.videoId] &&
+                savedAnalyses[appState.videoId].categorizedComments &&
+                Object.keys(savedAnalyses[appState.videoId].categorizedComments).length > 0;
 
-            // Notificar o content script para controlar o botão
+            appState.hasStoredAnalysis = hasValidAnalysis;
+            console.log('Este vídeo tem análise válida salva?', appState.hasStoredAnalysis);
+
+            // Notificar o background script apenas se temos análise válida
             if (appState.hasStoredAnalysis) {
                 chrome.runtime.sendMessage({
                     action: 'hasStoredAnalysis',

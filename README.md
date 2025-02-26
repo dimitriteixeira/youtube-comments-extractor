@@ -61,6 +61,13 @@ Para usar a análise com IA, você precisará:
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
 
+## Novidades na versão 1.1.6
+
+- **Correção do botão flutuante**: Botão "Análise de Comentários" agora só aparece quando existir análise válida para o vídeo
+- **Validação aprimorada de análises**: Verificação mais rigorosa do conteúdo das análises salvas
+- **Recarga automática**: Confirmação para recarregar a página após salvar uma análise, ativando o botão flutuante
+- **Experiência mais consistente**: Comportamento previsível do botão flutuante em diferentes estados da extensão
+
 ## Novidades na versão 1.1.5
 
 - **Correção de erro crítico**: Resolvido problema que causava "Extension context invalidated" ao clicar no botão flutuante após fechar o popup
