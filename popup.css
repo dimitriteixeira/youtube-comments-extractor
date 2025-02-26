@@ -8,8 +8,9 @@
 body {
   width: 600px;
   min-height: 400px;
-  background-color: #f9f9f9;
-  color: #333;
+  background-color: #f0f0f0;
+  color: #333;  
+  padding: 10px;
 }
 
 .container {
@@ -17,11 +18,16 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 400px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px 12px 12px 12px;
+  overflow: hidden;
 }
 
 /* Header e Cabeçalho */
 header {
   margin-bottom: 16px;
+  border-radius: 8px 8px 0 0;
 }
 
 .header-container {
@@ -525,8 +531,10 @@ h1 {
 footer {
   margin-top: auto;
   padding-top: 15px;
+  padding-bottom: 10px;
   border-top: 1px solid #eee;
   text-align: center;
+  border-radius: 0 0 12px 12px;
 }
 
 footer p {
