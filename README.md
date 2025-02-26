@@ -61,6 +61,13 @@ Para usar a análise com IA, você precisará:
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
 
+## Novidades na versão 1.1.8
+
+- **Navegação melhorada**: O botão flutuante agora desaparece automaticamente ao navegar para vídeos sem análise salva
+- **Comportamento contextual**: O botão aparece apenas em páginas com análises válidas, funcionando como um verdadeiro histórico
+- **Validação em tempo real**: Verificação constante durante a navegação para garantir a exibição correta do botão
+- **Experiência mais limpa**: Interface mantém-se organizada ao navegar entre diferentes vídeos do YouTube
+
 ## Novidades na versão 1.1.7
 
 - **Fluxo natural**: Removida a pergunta de recarga da página após salvar análise - o botão flutuante aparece automaticamente quando necessário

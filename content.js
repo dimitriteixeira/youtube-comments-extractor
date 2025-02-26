@@ -271,6 +271,8 @@ function setupObserver() {
     const url = window.location.href;
     if (!url.includes('youtube.com/watch')) {
         console.log('Não estamos em uma página de vídeo do YouTube');
+        // Remover qualquer botão existente se não estamos em uma página de vídeo
+        removeAnalysisButton();
         return;
     }
 
@@ -281,6 +283,8 @@ function setupObserver() {
     // Se não temos videoId, não podemos continuar
     if (!appState.videoId) {
         console.log('Não foi possível extrair o ID do vídeo da URL');
+        // Remover qualquer botão existente se não conseguimos o ID do vídeo
+        removeAnalysisButton();
         return;
     }
 
@@ -290,7 +294,14 @@ function setupObserver() {
     appState.analysisButtonInjected = false;
 
     // Verificar se temos análise no localStorage
-    checkForStoredAnalysis();
+    const hasAnalysis = checkForStoredAnalysis();
+
+    // Se não tem análise salva, garantir que o botão seja removido
+    if (!appState.hasStoredAnalysis) {
+        console.log('Não há análise salva para este vídeo, removendo botão flutuante se existir');
+        removeAnalysisButton();
+        return;
+    }
 
     // Se temos análise salva, configuramos uma verificação repetida
     // para garantir que o botão seja injetado quando a página terminar de carregar
@@ -507,6 +518,16 @@ function tryInjectAnalysisButton() {
     }
 }
 
+// Função para remover o botão flutuante se ele existir
+function removeAnalysisButton() {
+    const existingButton = document.getElementById('yt-comments-analysis-container');
+    if (existingButton) {
+        console.log('Removendo botão flutuante pois não há análise para este vídeo');
+        existingButton.remove();
+        appState.analysisButtonInjected = false;
+    }
+}
+
 // Configurar o observador quando a página carregar
 window.addEventListener('load', async () => {
     // Verificar se existe um estado de extração salvo
@@ -526,6 +547,9 @@ const urlObserver = new MutationObserver(() => {
 
         // Resetar o estado
         appState.analysisButtonInjected = false;
+
+        // Remover o botão flutuante existente para evitar que permaneça em páginas sem análise
+        removeAnalysisButton();
 
         // Limpar qualquer intervalo existente
         if (appState.injectionInterval) {
@@ -549,7 +573,11 @@ window.addEventListener('hashchange', () => {
     if (location.href !== lastUrl) {
         console.log('Detectada mudança de URL via hashchange');
         lastUrl = location.href;
+
+        // Resetar estado e remover botão
         appState.analysisButtonInjected = false;
+        removeAnalysisButton();
+
         setTimeout(setupObserver, 1000);
     }
 });
@@ -558,7 +586,11 @@ window.addEventListener('popstate', () => {
     if (location.href !== lastUrl) {
         console.log('Detectada mudança de URL via popstate');
         lastUrl = location.href;
+
+        // Resetar estado e remover botão
         appState.analysisButtonInjected = false;
+        removeAnalysisButton();
+
         setTimeout(setupObserver, 1000);
     }
 });
