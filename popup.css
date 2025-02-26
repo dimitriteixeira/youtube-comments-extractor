@@ -158,11 +158,14 @@ h1 {
   background-color: #f0f0f0;
   color: #333;
   border: 1px solid #ddd;
-  padding: 5px 10px;
-  border-radius: 3px;
+  padding: 8px 12px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.2s;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  min-width: 80px;
+  text-align: center;
 }
 
 .small-btn:hover {
@@ -610,4 +613,99 @@ footer p {
   margin-top: 10px;
   font-style: italic;
   text-align: center;
+}
+
+/* Estilo para inputs */
+input[type="password"], 
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+/* Configuração para o container de API Key e botões */
+.api-key-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.buttons-container {
+  display: flex;
+  gap: 10px;
+}
+
+/* Estilização dos botões específicos */
+.save-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.save-btn:hover {
+  background-color: #388E3C;
+}
+
+.save-btn:active {
+  transform: scale(0.95);
+  background-color: #2E7D32;
+}
+
+.test-btn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.test-btn:hover {
+  background-color: #1976D2;
+}
+
+.test-btn:active {
+  transform: scale(0.95);
+  background-color: #0D47A1;
+}
+
+/* Feedback visual para mensagens de status */
+.status-message {
+  font-size: 12px;
+  margin-top: 5px;
+  color: #666;
+  height: 20px;
+  transition: opacity 0.3s ease;
+  animation: fadeOut 3s forwards;
+  animation-delay: 2s;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Classes para mensagens de status */
+.status-success {
+  color: #4CAF50;
+}
+
+.status-error {
+  color: #F44336;
+}
+
+.status-info {
+  color: #2196F3;
+}
+
+/* Efeito visual de clique nos botões */
+.clicked {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
 } 

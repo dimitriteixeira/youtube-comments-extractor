@@ -29,8 +29,14 @@
                 <h3>Configurações da API</h3>
                 <div class="config-item">
                     <label for="api-key-input">OpenAI API Key</label>
-                    <input type="password" id="api-key-input" placeholder="Insira sua API Key aqui">
-                    <button id="save-api-key" class="small-btn">Salvar</button>
+                    <div class="api-key-container">
+                        <input type="password" id="api-key-input" placeholder="Insira sua API Key aqui">
+                        <div class="buttons-container">
+                            <button id="save-api-key" class="small-btn save-btn">Salvar</button>
+                            <button id="test-connection" class="small-btn test-btn">Testar Conexão</button>
+                        </div>
+                    </div>
+                    <div id="status-message" class="status-message"></div>
                 </div>
                 <div class="config-item">
                     <label for="model-select">Modelo</label>
@@ -41,9 +47,6 @@
                 <div class="config-item">
                     <label for="max-comments">Máximo de comentários</label>
                     <input type="number" id="max-comments" min="10" max="1000" step="10" value="100">
-                </div>
-                <div class="config-item">
-                    <button id="test-connection" class="small-btn">Testar Conexão</button>
                 </div>
             </div>
         </div>

@@ -30,7 +30,8 @@ const elements = {
     progressText: null,
     errorContainer: null,
     retryButton: null,
-    reloadButton: null
+    reloadButton: null,
+    statusMessage: null
 };
 
 // Categorias para análise
@@ -107,6 +108,7 @@ function initializeElementReferences() {
     elements.errorContainer = document.getElementById('error-container');
     elements.retryButton = document.getElementById('retry-button');
     elements.reloadButton = document.getElementById('reload-button');
+    elements.statusMessage = document.getElementById('status-message');
 
     // Inicialmente ocultar containers de erro e progresso
     elements.errorContainer.style.display = 'none';
@@ -991,14 +993,14 @@ function saveApiKey() {
     const apiKey = elements.apiKeyInput.value.trim();
 
     if (!apiKey) {
-        showError('API Key Inválida', 'Por favor, insira uma API Key válida');
+        showStatusMessage('API Key Inválida', 'error');
         return;
     }
 
     // Se a entrada contiver asteriscos e já tivermos uma chave armazenada,
     // mantenha a chave existente
     if (apiKey.includes('*') && activeApiKey) {
-        elements.statusMessage.textContent = 'API Key mantida';
+        showStatusMessage('API Key mantida', 'info');
         return;
     }
 
@@ -1006,7 +1008,13 @@ function saveApiKey() {
 
     chrome.storage.sync.set({ apiKey: apiKey }, function () {
         elements.apiKeyInput.value = maskApiKey(apiKey);
-        elements.statusMessage.textContent = 'API Key salva com sucesso';
+        showStatusMessage('API Key salva com sucesso', 'success');
+
+        // Efeito visual de clique
+        elements.saveApiKeyBtn.classList.add('clicked');
+        setTimeout(() => {
+            elements.saveApiKeyBtn.classList.remove('clicked');
+        }, 300);
     });
 }
 
@@ -1041,33 +1049,45 @@ async function testApiConnection() {
 
     if (!apiKey || apiKey.includes('*')) {
         if (!activeApiKey) {
-            showError('API Key Necessária', 'Por favor, insira uma API Key válida');
+            showStatusMessage('API Key necessária', 'error');
             return;
         }
     } else {
         activeApiKey = apiKey;
     }
 
+    // Efeito visual de clique
+    elements.testConnectionBtn.classList.add('clicked');
+
     const selectedModel = elements.modelSelect.value;
 
-    if (!selectedModel) {
-        showError('Modelo Necessário', 'Por favor, selecione um modelo');
-        return;
+    // Salvar o modelo selecionado se for diferente
+    if (selectedModel !== activeModel) {
+        activeModel = selectedModel;
+        chrome.storage.sync.set({ model: selectedModel });
     }
 
+    showStatusMessage('Testando conexão com a API...', 'info');
     setStatus('Testando conexão com a API...', 'loading');
 
     try {
         const result = await window.OpenAIService.testConnection(activeApiKey, selectedModel);
 
         if (result.success) {
-            setStatus('Conexão com a API estabelecida com sucesso!', 'success');
+            setStatus('Conexão estabelecida!', 'success');
+            showStatusMessage('Conexão testada com sucesso!', 'success');
         } else {
             showError('Falha na conexão', result.error || 'Não foi possível conectar à API OpenAI');
+            showStatusMessage('Falha na conexão: ' + (result.error || 'Não foi possível conectar à API'), 'error');
         }
     } catch (error) {
         console.error('Erro ao testar a API:', error);
         showError('Erro no teste', error.message);
+        showStatusMessage('Erro ao testar conexão: ' + error.message, 'error');
+    } finally {
+        setTimeout(() => {
+            elements.testConnectionBtn.classList.remove('clicked');
+        }, 300);
     }
 }
 
@@ -1266,4 +1286,26 @@ async function checkForAnalysisToLoad() {
     } catch (error) {
         console.error('Erro ao verificar análise para carregar:', error);
     }
+}
+
+// Função para mostrar mensagens de status com animação
+function showStatusMessage(message, type = 'info') {
+    if (!elements.statusMessage) return;
+
+    // Resetar a animação
+    elements.statusMessage.style.animation = 'none';
+    elements.statusMessage.offsetHeight; // Trigger reflow
+
+    // Remover classes existentes
+    elements.statusMessage.classList.remove('status-info', 'status-success', 'status-error');
+
+    // Adicionar classe correspondente ao tipo
+    elements.statusMessage.classList.add('status-' + type);
+
+    // Definir mensagem
+    elements.statusMessage.textContent = message;
+
+    // Adicionar animação
+    elements.statusMessage.style.animation = 'fadeOut 3s forwards';
+    elements.statusMessage.style.animationDelay = '2s';
 } 
