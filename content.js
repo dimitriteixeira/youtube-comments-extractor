@@ -286,7 +286,7 @@ function setupObserver() {
 
             console.log(`Tentativa ${appState.injectionAttempts} de injetar o botão...`);
             tryInjectAnalysisButton();
-        }, 2000); // Tentar a cada 2 segundos
+        }, 2000);
     }
 
     // Configurar um observador para detectar mudanças na página
@@ -432,10 +432,27 @@ function tryInjectAnalysisButton() {
 
         // Adicionar evento de clique para abrir a extensão
         analysisButton.addEventListener('click', function () {
-            chrome.runtime.sendMessage({
-                action: 'openPopupWithSavedAnalysis',
-                videoId: appState.videoId
-            });
+            try {
+                chrome.runtime.sendMessage({
+                    action: 'openPopupWithSavedAnalysis',
+                    videoId: appState.videoId
+                }, function (response) {
+                    if (chrome.runtime.lastError) {
+                        console.log('Erro ao enviar mensagem: ', chrome.runtime.lastError.message);
+                        // Informar ao usuário que a extensão precisa ser recarregada
+                        alert('O contexto da extensão foi invalidado. Por favor, recarregue a página para continuar usando a extensão.');
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao tentar abrir o popup: ', error);
+                // Informar ao usuário que a extensão precisa ser recarregada
+                alert('O contexto da extensão foi invalidado. Por favor, recarregue a página para continuar usando a extensão.');
+
+                // Tentar recarregar a página automaticamente após confirmação
+                if (confirm('Deseja recarregar a página agora?')) {
+                    window.location.reload();
+                }
+            }
         });
 
         // Adicionar o botão ao contêiner

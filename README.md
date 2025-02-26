@@ -61,6 +61,12 @@ Para usar a análise com IA, você precisará:
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
 
+## Novidades na versão 1.1.5
+
+- **Correção de erro crítico**: Resolvido problema que causava "Extension context invalidated" ao clicar no botão flutuante após fechar o popup
+- **Melhor tratamento de erros**: Adicionada verificação de contexto da extensão com mensagens claras para o usuário
+- **Experiência melhorada**: Opção de recarregar a página automaticamente quando um erro de contexto é detectado
+
 ## Novidades na versão 1.1.4
 
 - **Comentários em análises salvas**: Agora os comentários mais relevantes (até 20 por categoria) também são salvos e exibidos quando você recarrega uma análise anterior

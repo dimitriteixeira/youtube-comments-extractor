@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Comments Extractor",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Extrai e analisa comentários de vídeos do YouTube usando a API da OpenAI",
   "permissions": [
     "activeTab",
