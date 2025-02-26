@@ -163,11 +163,9 @@ function checkForStoredAnalysis() {
                     if (event.data.value) {
                         try {
                             const analyses = JSON.parse(event.data.value);
-                            // Verificar se existe análise para este vídeo E se ela contém dados válidos
-                            const hasValidAnalysis = analyses.hasOwnProperty(appState.videoId) &&
-                                analyses[appState.videoId] &&
-                                analyses[appState.videoId].categorizedComments &&
-                                Object.keys(analyses[appState.videoId].categorizedComments).length > 0;
+
+                            // Verificação mais rigorosa de análises válidas
+                            const hasValidAnalysis = isValidAnalysis(analyses, appState.videoId);
 
                             appState.hasStoredAnalysis = hasValidAnalysis;
                             console.log('Análise válida para o vídeo encontrada via script injetado:', appState.hasStoredAnalysis);
@@ -208,11 +206,8 @@ function checkForStoredAnalysis() {
             const savedAnalyses = JSON.parse(savedData);
             console.log('Análises salvas:', Object.keys(savedAnalyses).length);
 
-            // Verificar se o ID deste vídeo está nas análises E se contém dados válidos
-            const hasValidAnalysis = savedAnalyses.hasOwnProperty(appState.videoId) &&
-                savedAnalyses[appState.videoId] &&
-                savedAnalyses[appState.videoId].categorizedComments &&
-                Object.keys(savedAnalyses[appState.videoId].categorizedComments).length > 0;
+            // Verificação mais rigorosa de análises válidas
+            const hasValidAnalysis = isValidAnalysis(savedAnalyses, appState.videoId);
 
             appState.hasStoredAnalysis = hasValidAnalysis;
             console.log('Este vídeo tem análise válida salva?', appState.hasStoredAnalysis);
@@ -237,6 +232,37 @@ function checkForStoredAnalysis() {
         appState.hasStoredAnalysis = false;
         return false;
     }
+}
+
+// Função auxiliar para verificar se uma análise é válida
+function isValidAnalysis(analyses, videoId) {
+    // Verificar se existe uma entrada para o vídeo
+    if (!analyses || !analyses.hasOwnProperty(videoId) || !analyses[videoId]) {
+        return false;
+    }
+
+    const analysis = analyses[videoId];
+
+    // Verificar se a análise tem a estrutura esperada
+    if (!analysis.categorizedComments || typeof analysis.categorizedComments !== 'object') {
+        return false;
+    }
+
+    // Verificar se há pelo menos uma categoria válida
+    const categories = Object.keys(analysis.categorizedComments);
+    if (categories.length === 0) {
+        return false;
+    }
+
+    // Verificar se pelo menos uma categoria tem análise
+    for (const categoryKey of categories) {
+        const category = analysis.categorizedComments[categoryKey];
+        if (category && (category.analysis || (category.comments && category.comments.length > 0))) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // Verifica periodicamente se o botão de análise deve ser injetado

@@ -794,13 +794,8 @@ function saveAnalysisResults() {
             if (response) {
                 console.log('Content script respondeu:', response);
 
-                // Perguntar ao usuário se deseja recarregar a página para ver o botão flutuante
-                if (confirm('Análise salva com sucesso! Deseja recarregar a página para ativar o botão de análise flutuante?')) {
-                    // Recarregar a página
-                    chrome.tabs.reload(activeTab.id);
-                    // Fechar o popup
-                    window.close();
-                }
+                // Substituindo o prompt de confirmação por uma notificação de sucesso
+                setStatus('Análise salva com sucesso! O botão flutuante aparecerá ao retornar a este vídeo.', 'success');
             } else if (chrome.runtime.lastError) {
                 console.error('Erro ao notificar content script:', chrome.runtime.lastError);
             }
