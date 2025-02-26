@@ -11,6 +11,7 @@ Uma extensão para Microsoft Edge que extrai e analisa comentários de vídeos d
 - **Comentários de suporte**: Mostra exemplos concretos que fundamentam cada insight extraído
 - **Estado persistente**: Mantém o estado da extração mesmo se o popup for fechado e reaberto
 - **Interface aprimorada**: Design moderno e intuitivo com feedback visual para ações
+- **Comentários salvos**: Mantém os comentários mais relevantes para visualização posterior
 
 ## O que a extensão analisa
 
@@ -59,6 +60,12 @@ Para usar a análise com IA, você precisará:
    - **Extras**: Informações adicionais mencionadas nos comentários
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
+
+## Novidades na versão 1.1.4
+
+- **Comentários em análises salvas**: Agora os comentários mais relevantes (até 20 por categoria) também são salvos e exibidos quando você recarrega uma análise anterior
+- **Melhor contexto para análises**: Permite visualizar os comentários que embasaram cada categoria da análise mesmo após fechar a extensão
+- **Menções clicáveis**: Todas as menções a usuários nos comentários salvos permanecem clicáveis
 
 ## Novidades na versão 1.1.3
 

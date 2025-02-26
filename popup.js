@@ -735,13 +735,19 @@ function saveAnalysisResults() {
             categorizedComments: {}
         };
 
-        // Salvar apenas os resultados de análise e contagens, não os comentários completos para economizar espaço
+        // Salvar os comentários (limitados a 20 por categoria) junto com os resultados
         for (const categoryId in categorizedComments) {
             const category = categorizedComments[categoryId];
+
+            // Limitar o número de comentários para economizar espaço
+            const displayLimit = Math.min(category.comments ? category.comments.length : 0, 20);
+            const savedComments = category.comments ? category.comments.slice(0, displayLimit) : [];
+
             analysisData.categorizedComments[categoryId] = {
                 title: category.title,
                 description: category.description,
                 commentCount: category.comments ? category.comments.length : 0,
+                comments: savedComments,
                 analysis: category.analysis ? category.analysis.result : null
             };
         }
@@ -1311,11 +1317,37 @@ async function showSavedAnalysisModal(analysisData) {
             tabContent.appendChild(analysisDiv);
         }
 
-        // Adicionar contador de comentários
-        const commentsInfo = document.createElement('p');
-        commentsInfo.className = 'comments-info';
-        commentsInfo.textContent = `Comentários nesta categoria: ${category.commentCount}`;
-        tabContent.appendChild(commentsInfo);
+        // Adicionar comentários se disponíveis
+        if (category.comments && category.comments.length > 0) {
+            const commentsHeader = document.createElement('h3');
+            commentsHeader.textContent = `Comentários (${category.commentCount})`;
+            tabContent.appendChild(commentsHeader);
+
+            const commentsContainer = document.createElement('div');
+            commentsContainer.className = 'category-comments';
+
+            // Exibir os comentários salvos
+            category.comments.forEach(comment => {
+                const commentDiv = createCommentElement(comment);
+                commentsContainer.appendChild(commentDiv);
+            });
+
+            // Se houver mais comentários do que os salvos, mostrar mensagem
+            if (category.commentCount > category.comments.length) {
+                const moreCommentsMsg = document.createElement('p');
+                moreCommentsMsg.className = 'more-comments-msg';
+                moreCommentsMsg.textContent = `+ ${category.commentCount - category.comments.length} comentários não exibidos`;
+                commentsContainer.appendChild(moreCommentsMsg);
+            }
+
+            tabContent.appendChild(commentsContainer);
+        } else {
+            // Se não houver comentários salvos, mostrar apenas a contagem
+            const commentsInfo = document.createElement('p');
+            commentsInfo.className = 'comments-info';
+            commentsInfo.textContent = `Comentários nesta categoria: ${category.commentCount}`;
+            tabContent.appendChild(commentsInfo);
+        }
 
         tabsContent.appendChild(tabContent);
     }
@@ -1337,6 +1369,9 @@ async function showSavedAnalysisModal(analysisData) {
     if (firstTab) {
         firstTab.click();
     }
+
+    // Configurar event listeners para menções de usuários
+    setupMentionListeners();
 }
 
 // Verificar se o popup foi aberto para mostrar uma análise específica
