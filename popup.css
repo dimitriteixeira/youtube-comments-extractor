@@ -564,7 +564,7 @@ footer p {
   background-color: #fff3e0;
   border-radius: 6px;
   padding: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   border-left: 4px solid #ff8f00;
 }
 
@@ -590,21 +590,6 @@ footer p {
 .loaded-stats {
   font-size: 13px;
   color: #555;
-}
-
-#new-analysis-btn {
-  background-color: #cc0000;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.2s;
-}
-
-#new-analysis-btn:hover {
-  background-color: #aa0000;
 }
 
 .comments-info {

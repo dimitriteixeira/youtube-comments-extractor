@@ -9,6 +9,8 @@ Uma extensão para Microsoft Edge que extrai e analisa comentários de vídeos d
 - **Personalização**: Permite selecionar o modelo de IA e configurar o número máximo de comentários
 - **Análise detalhada**: Identifica padrões, informações extra, sugestões e nível de satisfação
 - **Comentários de suporte**: Mostra exemplos concretos que fundamentam cada insight extraído
+- **Estado persistente**: Mantém o estado da extração mesmo se o popup for fechado e reaberto
+- **Interface aprimorada**: Design moderno e intuitivo com feedback visual para ações
 
 ## O que a extensão analisa
 
@@ -57,6 +59,14 @@ Para usar a análise com IA, você precisará:
    - **Extras**: Informações adicionais mencionadas nos comentários
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
+
+## Novidades na versão 1.1.3
+
+- **Preservação do estado**: Agora a extensão mantém o estado da extração mesmo se o popup for fechado
+- **Interface aprimorada**: Melhorias estéticas na área de configuração da API
+- **Feedback visual**: Botões com efeitos visuais ao serem clicados
+- **Simplificação**: Remoção de botões redundantes para uma experiência mais intuitiva
+- **Correções de bugs**: Resolução de problemas relacionados à invalidação do contexto da extensão
 
 ## Limitações
 

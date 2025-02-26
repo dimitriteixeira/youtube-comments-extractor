@@ -1259,19 +1259,12 @@ async function showSavedAnalysisModal(analysisData) {
     loadedInfo.innerHTML = `
         <div class="loaded-header">
             <span class="loaded-timestamp">Análise realizada em: ${formattedDate}</span>
-            <button id="new-analysis-btn" class="small-btn"><i class="fa-solid fa-refresh"></i> Nova Análise</button>
         </div>
         <h3 class="loaded-title">${analysisData.videoTitle}</h3>
         <p class="loaded-stats">Total de comentários: ${analysisData.extractedCount}</p>
     `;
 
     elements.analysisResults.appendChild(loadedInfo);
-
-    // Adicionar botão para atualizar a análise
-    document.getElementById('new-analysis-btn').addEventListener('click', () => {
-        clearResults();
-        extractAndProcessComments();
-    });
 
     // Criar tabs para as categorias
     const tabsList = document.createElement('ul');
