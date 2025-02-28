@@ -136,4 +136,4 @@ Agradecemos a todos os usuários que contribuíram com feedback e sugestões par
 
 ---
 
-© 2023 YouTube Comments Extractor. Todos os direitos reservados.
+© 2025 YouTube Comments Extractor. Todos os direitos reservados.
