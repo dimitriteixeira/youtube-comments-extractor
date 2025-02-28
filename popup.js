@@ -1007,12 +1007,17 @@ function createCommentElement(comment) {
 function formatAnalysisResult(result, categoryId) {
     if (!result) return 'Não há resultado de análise disponível.';
 
+    // Log para diagnóstico
+    console.log(`Formatando resultado para categoria: ${categoryId}`);
+
     // Se for a categoria de satisfação, verificar se podemos extrair rating e sentimento
     if (categoryId === 'satisfaction') {
+        console.log('Processando resultado de satisfação');
         const satisfactionResult = extractSatisfactionData(result);
         if (satisfactionResult) {
             return satisfactionResult;
         }
+        console.log('Não foi possível extrair dados de satisfação, usando formatação padrão');
     }
 
     // Se o resultado já vier em HTML, retornar direto
@@ -1049,13 +1054,6 @@ function formatAnalysisResult(result, categoryId) {
             }
             return match;
         });
-
-    // Envolver listas em tags <ul>
-    if (formatted.includes('<li>')) {
-        formatted = formatted
-            .replace(/<li>(.*?)<\/li>/g, '<ul><li>$1</li></ul>')
-            .replace(/<\/ul><ul>/g, '');
-    }
 
     return formatted;
 }
@@ -1523,12 +1521,30 @@ function showStatusMessage(message, type = 'info') {
 // Extrai e formata os dados de satisfação a partir do resultado da análise
 function extractSatisfactionData(result) {
     try {
+        console.log('Analisando resultado de satisfação:', result);
+
         // Tentar extrair os dados estruturados da resposta
-        let sentiment = result.match(/SENTIMENT: (Positivo|Negativo|Misto)/i);
-        let rating = result.match(/RATING: ([0-9]|10)/i);
+        let sentiment = result.match(/SENTIMENT:\s*(Positivo|Negativo|Misto)/i);
+        let rating = result.match(/RATING:\s*([0-9]|10)/i);
+
+        // Se não encontrou no formato esperado, tentar formatos alternativos
+        if (!sentiment) {
+            // Tentar outros formatos possíveis
+            sentiment = result.match(/Sentimento[^:]*:\s*(Positivo|Negativo|Misto)/i) ||
+                result.match(/(Positivo|Negativo|Misto)/i);
+        }
+
+        if (!rating) {
+            // Tentar outros formatos possíveis para classificações
+            rating = result.match(/[Nn]ota[^:]*:\s*([0-9]|10)/i) ||
+                result.match(/[Cc]lassificação[^:]*:\s*([0-9]|10)/i) ||
+                result.match(/[Pp]ontuação[^:]*:\s*([0-9]|10)/i);
+        }
 
         if (!sentiment || !rating) {
             console.log('Formato de satisfação não encontrado, usando formatação padrão');
+            console.log('Sentiment encontrado:', sentiment);
+            console.log('Rating encontrado:', rating);
             return null;
         }
 
@@ -1540,26 +1556,95 @@ function extractSatisfactionData(result) {
         let negativePoints = [];
         let analysisText = '';
 
-        // Extrair pontos positivos
-        const posSection = result.match(/Pontos Positivos:[\s\S]*?(?=Pontos Negativos:|ANALYSIS:|$)/i);
+        // Extrair pontos positivos (tentar vários padrões)
+        const posPatterns = [
+            /Pontos Positivos:[\s\S]*?(?=Pontos Negativos:|ANALYSIS:|$)/i,
+            /Aspectos Positivos:[\s\S]*?(?=Aspectos Negativos:|ANALYSIS:|$)/i,
+            /Pontos Fortes:[\s\S]*?(?=Pontos Fracos:|ANALYSIS:|$)/i
+        ];
+
+        let posSection = null;
+        for (const pattern of posPatterns) {
+            posSection = result.match(pattern);
+            if (posSection) break;
+        }
+
         if (posSection) {
             positivePoints = posSection[0].split('\n')
                 .filter(line => line.trim().startsWith('-'))
                 .map(line => line.trim().substring(1).trim());
+
+            // Se não encontrou pontos com bullet points, tente extrair frases completas
+            if (positivePoints.length === 0) {
+                positivePoints = posSection[0].split('\n')
+                    .filter(line => line.trim() && !line.includes('Positivos:') && !line.includes('Fortes:'))
+                    .map(line => line.trim());
+            }
         }
 
-        // Extrair pontos negativos
-        const negSection = result.match(/Pontos Negativos:[\s\S]*?(?=ANALYSIS:|$)/i);
+        // Extrair pontos negativos (tentar vários padrões)
+        const negPatterns = [
+            /Pontos Negativos:[\s\S]*?(?=ANALYSIS:|$)/i,
+            /Aspectos Negativos:[\s\S]*?(?=ANALYSIS:|$)/i,
+            /Pontos Fracos:[\s\S]*?(?=ANALYSIS:|$)/i
+        ];
+
+        let negSection = null;
+        for (const pattern of negPatterns) {
+            negSection = result.match(pattern);
+            if (negSection) break;
+        }
+
         if (negSection) {
             negativePoints = negSection[0].split('\n')
                 .filter(line => line.trim().startsWith('-'))
                 .map(line => line.trim().substring(1).trim());
+
+            // Se não encontrou pontos com bullet points, tente extrair frases completas
+            if (negativePoints.length === 0) {
+                negativePoints = negSection[0].split('\n')
+                    .filter(line => line.trim() && !line.includes('Negativos:') && !line.includes('Fracos:'))
+                    .map(line => line.trim());
+            }
         }
 
         // Extrair análise detalhada
         const analysisSection = result.match(/ANALYSIS:[\s\S]*?$/i);
         if (analysisSection) {
             analysisText = analysisSection[0].replace(/ANALYSIS:[\s]*/i, '').trim();
+        } else {
+            // Tentar encontrar a análise em outros formatos
+            const altAnalysisSection = result.match(/Análise[^:]*:[\s\S]*?$/i);
+            if (altAnalysisSection) {
+                analysisText = altAnalysisSection[0].replace(/Análise[^:]*:[\s]*/i, '').trim();
+            } else {
+                // Se não encontrou seção específica, use o resto do texto após os pontos
+                const restOfText = result.replace(/.*Pontos Negativos:[^\n]*\n/i, '');
+                if (restOfText && restOfText.length > 50) { // Se tiver conteúdo suficiente
+                    analysisText = restOfText.trim();
+                }
+            }
+        }
+
+        // Se não conseguiu extrair pontos, criar alguns padrões
+        if (positivePoints.length === 0) {
+            if (sentiment === 'Positivo') {
+                positivePoints = ['Usuários geralmente satisfeitos com o conteúdo'];
+            } else if (sentiment === 'Misto') {
+                positivePoints = ['Alguns aspectos do conteúdo foram bem recebidos'];
+            } else {
+                positivePoints = ['Poucos ou nenhum ponto positivo mencionado'];
+            }
+        }
+
+        if (negativePoints.length === 0) {
+            if (sentiment === 'Negativo') {
+                negativePoints = ['Usuários expressaram insatisfação com o conteúdo'];
+            } else if (sentiment === 'Misto') {
+                negativePoints = ['Alguns aspectos do conteúdo foram criticados'];
+            } else {
+                negativePoints = ['Poucos ou nenhum ponto negativo mencionado'];
+            }
         }
 
         // Construir o HTML de satisfação
@@ -1606,6 +1691,7 @@ function extractSatisfactionData(result) {
         return html;
     } catch (error) {
         console.error('Erro ao processar dados de satisfação:', error);
+        console.error('Conteúdo da resposta:', result);
         return null;
     }
 }

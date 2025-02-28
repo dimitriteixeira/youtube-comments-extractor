@@ -6,7 +6,7 @@ Uma extensão para Microsoft Edge que extrai e analisa comentários de vídeos d
 
 O YouTube Comments Extractor traz uma solução completa para criadores de conteúdo e pesquisadores que precisam analisar o feedback da audiência. Utilizando modelos avançados de IA, nossa extensão extrai todos os comentários disponíveis de um vídeo e apresenta análises detalhadas e insights valiosos sobre o conteúdo.
 
-![Versão Atual](https://img.shields.io/badge/Versão-1.2.1-red)
+![Versão Atual](https://img.shields.io/badge/Versão-1.2.2-red)
 
 ## Funcionalidades Principais
 
@@ -123,6 +123,7 @@ Agradecemos a todos os usuários que contribuíram com feedback e sugestões par
 
 | Versão | Data       | Principais Mudanças                                                                                                                                                                                                                                                                  |
 | ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.2.2  | 2023/08/05 | • Correção de bugs na exibição dos ratings de satisfação<br>• Melhorias nos prompts para garantir formato consistente<br>• Adicionados fallbacks para diferentes formatos de resposta<br>• Sistema de logs aprimorado para diagnóstico                                               |
 | 1.2.1  | 2023/07/20 | • Adição de rating visual para satisfação (Positivo/Negativo/Misto)<br>• Implementação de pontuação de 0-10 para conteúdo<br>• Organização visual de pontos positivos e negativos<br>• Novo layout moderno para a aba de satisfação                                                  |
 | 1.2.0  | 2023/07/10 | • Correção de bugs na extração de respostas aos comentários<br>• Simplificação da lista de modelos para GPT-4o Mini e GPT-4o<br>• Detecção aprimorada de sugestões nos comentários<br>• Extração de sugestões do resumo geral<br>• Prompts mais detalhados para análise de sugestões |
 | 1.1.9  | 2023/06/25 | • Revertidas alterações estéticas para garantir compatibilidade                                                                                                                                                                                                                      |

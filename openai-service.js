@@ -165,17 +165,27 @@ window.OpenAIService = {
             case 'satisfaction':
                 categorySystemPrompt = 'Analise os comentários relacionados à satisfação ou insatisfação dos usuários. Identifique o sentimento geral (Positivo, Negativo ou Misto) e atribua uma pontuação de 0 a 10 com base na satisfação dos usuários.';
                 categoryUserPrompt = `Analise estes comentários que expressam satisfação ou insatisfação sobre o vídeo:\n\n${commentText}\n\n
-Por favor, forneça uma análise estruturada seguindo este formato específico:
+Por favor, forneça uma análise estruturada seguindo EXATAMENTE este formato:
 
-1. SENTIMENT: [Positivo/Negativo/Misto] - Classifique o sentimento geral predominante nos comentários
-2. RATING: [0-10] - Atribua uma nota de 0 a 10 para o conteúdo baseado nos comentários (onde 0 é totalmente insatisfeito e 10 é extremamente satisfeito)
-3. POINTS:
-   - Pontos Positivos: Liste os principais aspectos positivos mencionados nos comentários
-   - Pontos Negativos: Liste os principais aspectos negativos mencionados nos comentários
-4. ANALYSIS:
-   - Forneça uma análise detalhada da satisfação dos usuários, explicando os fatores que influenciaram a avaliação e insights relevantes sobre a percepção da audiência
+SENTIMENT: [Positivo/Negativo/Misto]
+RATING: [0-10]
 
-É importante manter este formato exato para que a interface possa exibir corretamente as informações. Use JSON para os dados estruturados.`;
+Pontos Positivos:
+- [Ponto positivo 1]
+- [Ponto positivo 2]
+- [Ponto positivo 3]
+- [etc...]
+
+Pontos Negativos:
+- [Ponto negativo 1]
+- [Ponto negativo 2]
+- [Ponto negativo 3]
+- [etc...]
+
+ANALYSIS:
+[Sua análise detalhada aqui, explicando os fatores que influenciaram a avaliação]
+
+É EXTREMAMENTE IMPORTANTE manter este formato exato, com exatamente estes cabeçalhos e estrutura, para que o sistema possa processar corretamente os dados. Certifique-se de incluir o SENTIMENT e RATING exatamente como mostrado acima.`;
                 break;
 
             case 'extraInfo':
