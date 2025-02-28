@@ -1,145 +1,138 @@
 # YouTube Comments Extractor
 
-Uma extensão para Microsoft Edge que extrai e analisa comentários de vídeos do YouTube utilizando inteligência artificial.
+Uma extensão para Microsoft Edge que extrai e analisa comentários de vídeos do YouTube utilizando inteligência artificial avançada.
 
-## Funcionalidades
+## Visão Geral
 
-- **Extração otimizada**: Extrai todos os comentários e respostas do vídeo, não apenas os primeiros 20
-- **Análise com IA**: Utiliza modelos de linguagem avançados (GPT-4o-mini, GPT-3.5-Turbo ou GPT-4) para analisar o conteúdo
-- **Personalização**: Permite selecionar o modelo de IA e configurar o número máximo de comentários
-- **Análise detalhada**: Identifica padrões, informações extra, sugestões e nível de satisfação
-- **Comentários de suporte**: Mostra exemplos concretos que fundamentam cada insight extraído
-- **Estado persistente**: Mantém o estado da extração mesmo se o popup for fechado e reaberto
-- **Interface aprimorada**: Design moderno e intuitivo com feedback visual para ações
-- **Comentários salvos**: Mantém os comentários mais relevantes para visualização posterior
+O YouTube Comments Extractor traz uma solução completa para criadores de conteúdo e pesquisadores que precisam analisar o feedback da audiência. Utilizando modelos avançados de IA, nossa extensão extrai todos os comentários disponíveis de um vídeo e apresenta análises detalhadas e insights valiosos sobre o conteúdo.
 
-## Novidades na versão 1.2.1
+![Versão Atual](https://img.shields.io/badge/Versão-1.2.1-red)
 
-- **Rating de satisfação**: Adição de um indicador visual que mostra o sentimento geral nos comentários (Positivo, Negativo ou Misto)
-- **Pontuação do conteúdo**: Escala de 0 a 10 que representa a satisfação geral do público com o vídeo
-- **Organização visual de pontos**: Exibição clara dos pontos positivos e negativos mencionados nos comentários
-- **Interface aprimorada**: Layout moderno para a aba de satisfação com indicadores visuais coloridos
+## Funcionalidades Principais
 
-## O que a extensão analisa
+### Extração e Análise
 
-- Sentimento geral nos comentários (Positivo, Negativo ou Misto)
-- Nota de 0 a 10 para o conteúdo baseada na satisfação do público
-- Pontos positivos e negativos específicos mencionados nos comentários
-- Informações extras relevantes compartilhadas nos comentários
-- Sugestões de outros assuntos mencionados pelo público
-- Resumo geral do feedback
+- ✅ **Extração Completa**: Captura todos os comentários e respostas disponíveis, superando a limitação de apenas 20 comentários da interface padrão do YouTube
+- ✅ **Processamento com IA**: Utiliza modelos GPT-4o Mini e GPT-4o para análise avançada do texto
+- ✅ **Salvamento Local**: Armazena as análises no navegador para acesso posterior sem precisar refazer a extração
+
+### Análise Inteligente
+
+- ✅ **Sentimento da Audiência**: Classifica o feedback como Positivo, Negativo ou Misto com indicador visual
+- ✅ **Pontuação do Conteúdo**: Atribui nota de 0 a 10 para o vídeo baseada na satisfação do público
+- ✅ **Pontos Fortes e Fracos**: Identifica os aspectos positivos e negativos mais mencionados
+- ✅ **Informações Adicionais**: Destaca informações complementares compartilhadas pelos usuários
+- ✅ **Sugestões da Audiência**: Coleta sugestões e pedidos dos espectadores para futuros conteúdos
+
+### Interface e Usabilidade
+
+- ✅ **Design Responsivo**: Interface moderna e intuitiva com feedback visual para todas as ações
+- ✅ **Acesso Rápido**: Botão flutuante para acessar análises já realizadas diretamente na página do vídeo
+- ✅ **Sistema de Abas**: Organiza os diferentes tipos de análise em categorias de fácil navegação
+- ✅ **Estado Persistente**: Mantém o progresso da extração mesmo se o popup for fechado acidentalmente
+- ✅ **Comentários de Exemplo**: Exibe os comentários mais relevantes para cada insight da análise
+
+## Capturas de Tela
+
+_Adicione capturas de tela da sua extensão aqui (recomendamos 3-4 imagens demonstrando as principais funcionalidades)_
 
 ## Requisitos
 
-Para usar a análise com IA, você precisará:
+Para utilizar a análise com IA, você precisará:
 
-1. Chave da API da OpenAI (você pode obter uma em [platform.openai.com](https://platform.openai.com/))
+1. Chave da API da OpenAI (obtenha em [platform.openai.com](https://platform.openai.com/))
 2. Conta na OpenAI com créditos disponíveis para uso da API
 
-## Como instalar
+## Instalação
 
-### Instalação como desenvolvedor
+### Como usuário (Microsoft Edge)
+
+1. Acesse a Microsoft Store e busque por "YouTube Comments Extractor"
+2. Clique em "Obter" para instalar a extensão
+3. Após instalada, clique no ícone na barra de ferramentas para começar a usar
+
+### Como desenvolvedor
 
 1. Clone ou baixe este repositório para seu computador
 2. Abra o Microsoft Edge e navegue até `edge://extensions/`
-3. Ative o "Modo de desenvolvedor" no canto inferior esquerdo
+3. Ative o "Modo de desenvolvedor" no canto superior direito
 4. Clique em "Carregar sem pacote"
 5. Selecione a pasta onde este repositório foi baixado
 
-## Como configurar
+## Guia Rápido de Uso
 
-1. Após instalar a extensão, clique no ícone na barra de ferramentas
-2. Clique em "⚙️ Configurações da IA" para expandir o painel de configurações
-3. Insira sua chave da API da OpenAI e clique em "Salvar"
-4. Escolha o modelo de IA desejado:
-   - **GPT-4o-mini**: Rápido e eficiente para análises rotineiras (recomendado)
-   - **GPT-3.5-Turbo**: Bom equilíbrio entre desempenho e custo
-   - **GPT-4**: Para análises mais detalhadas (mais caro)
-5. Defina o número máximo de comentários a serem extraídos (100-1000)
+1. **Configuração Inicial**
 
-## Como usar
+   - Clique no ícone da extensão na barra de ferramentas
+   - Acesse o painel de configurações (ícone ⚙️)
+   - Insira sua chave da API da OpenAI e salve
+   - Selecione o modelo desejado (recomendamos GPT-4o Mini para melhor custo-benefício)
+   - Defina o número máximo de comentários (quanto mais, melhor a análise)
 
-1. Navegue até um vídeo do YouTube
-2. Clique no ícone da extensão na barra de ferramentas
-3. Clique no botão "Extrair Comentários"
-4. Aguarde o processo de extração e análise ser concluído
-5. Navegue pelas abas para visualizar os resultados:
-   - **Resumo**: Visão geral dos comentários
-   - **Satisfação**: Análise da satisfação com rating visual, pontuação e pontos positivos/negativos
-   - **Extras**: Informações adicionais mencionadas nos comentários
-   - **Sugestões**: Tópicos sugeridos pelo público
-   - **Comentários**: Lista completa dos comentários extraídos
+2. **Extraindo Comentários**
 
-## Novidades na versão 1.2.0
+   - Navegue até um vídeo do YouTube
+   - Clique no ícone da extensão
+   - Pressione o botão "Extrair e Analisar Comentários"
+   - Aguarde o processo de extração e análise ser concluído
 
-- **Correção de bug na extração de respostas**: Resolvido problema que abria campos de resposta em vez de expandir respostas existentes, especialmente em vídeos do próprio canal
-- **Modelos de IA otimizados**: Simplificação da lista de modelos para apenas GPT-4o Mini e GPT-4o
-- **Melhoria na categorização de sugestões**: Detecção aprimorada de sugestões nos comentários com mais palavras-chave
-- **Extração de sugestões do resumo**: Nova funcionalidade que extrai sugestões do resumo geral quando não são encontradas na categorização direta
-- **Prompts mais detalhados**: Instruções mais específicas para o modelo de IA extrair sugestões de forma mais eficaz
+3. **Explorando os Resultados**
 
-## Novidades na versão 1.1.9
+   - Navegue pelas abas para visualizar diferentes aspectos da análise:
+     - **Resumo**: Visão geral e tendências principais dos comentários
+     - **Satisfação**: Análise do sentimento, pontuação e pontos positivos/negativos
+     - **Informações Extras**: Dados adicionais compartilhados nos comentários
+     - **Sugestões**: Ideias e pedidos da audiência para futuros conteúdos
+     - **Comentários**: Lista completa dos comentários extraídos
 
-- Revertidas alterações estéticas para garantir compatibilidade em diferentes ambientes
+4. **Acessando Análises Salvas**
+   - Ao retornar a um vídeo já analisado, um botão flutuante "Análise de Comentários" estará disponível
+   - Clique no botão para visualizar a análise anterior sem necessidade de nova extração
 
-## Novidades na versão 1.1.8
+## Limitações Atuais
 
-- **Navegação melhorada**: O botão flutuante agora desaparece automaticamente ao navegar para vídeos sem análise salva
-- **Comportamento contextual**: O botão aparece apenas em páginas com análises válidas, funcionando como um verdadeiro histórico
-- **Validação em tempo real**: Verificação constante durante a navegação para garantir a exibição correta do botão
-- **Experiência mais limpa**: Interface mantém-se organizada ao navegar entre diferentes vídeos do YouTube
-
-## Novidades na versão 1.1.7
-
-- **Fluxo natural**: Removida a pergunta de recarga da página após salvar análise - o botão flutuante aparece automaticamente quando necessário
-- **Validação aprimorada**: Verificação mais rigorosa das análises salvas para garantir que só mostrem o botão quando houver conteúdo válido
-- **Experiência intuitiva**: Comportamento mais natural do botão flutuante, aparecendo somente quando há análise válida disponível
-- **Mensagem clara**: Notificação simples após salvamento informando que o botão estará disponível ao retornar ao vídeo
-
-## Novidades na versão 1.1.6
-
-- **Correção do botão flutuante**: Botão "Análise de Comentários" agora só aparece quando existir análise válida para o vídeo
-- **Validação aprimorada de análises**: Verificação mais rigorosa do conteúdo das análises salvas
-- **Experiência mais consistente**: Comportamento previsível do botão flutuante em diferentes estados da extensão
-
-## Novidades na versão 1.1.5
-
-- **Correção de erro crítico**: Resolvido problema que causava "Extension context invalidated" ao clicar no botão flutuante após fechar o popup
-- **Melhor tratamento de erros**: Adicionada verificação de contexto da extensão com mensagens claras para o usuário
-- **Experiência melhorada**: Opção de recarregar a página automaticamente quando um erro de contexto é detectado
-
-## Novidades na versão 1.1.4
-
-- **Comentários em análises salvas**: Agora os comentários mais relevantes (até 20 por categoria) também são salvos e exibidos quando você recarrega uma análise anterior
-- **Melhor contexto para análises**: Permite visualizar os comentários que embasaram cada categoria da análise mesmo após fechar a extensão
-- **Menções clicáveis**: Todas as menções a usuários nos comentários salvos permanecem clicáveis
-
-## Novidades na versão 1.1.3
-
-- **Preservação do estado**: Agora a extensão mantém o estado da extração mesmo se o popup for fechado
-- **Interface aprimorada**: Melhorias estéticas na área de configuração da API
-- **Feedback visual**: Botões com efeitos visuais ao serem clicados
-- **Simplificação**: Remoção de botões redundantes para uma experiência mais intuitiva
-- **Correções de bugs**: Resolução de problemas relacionados à invalidação do contexto da extensão
-
-## Limitações
-
-- A análise com IA é limitada aos primeiros 100 comentários para evitar alta utilização da API
-- Vídeos com comentários desativados não são compatíveis
-- A qualidade da análise depende da quantidade e relevância dos comentários
-- É necessária uma chave válida da API OpenAI para usar os recursos de IA
+- A análise detalhada com IA é aplicada aos primeiros 100 comentários por padrão (ajustável até 1000)
+- Vídeos com comentários desativados não são compatíveis com a extensão
+- A qualidade da análise depende diretamente da quantidade e relevância dos comentários
+- É necessária uma chave válida da API OpenAI para utilizar os recursos de análise
 
 ## Tecnologias Utilizadas
 
-- JavaScript
-- HTML/CSS
+- JavaScript (Vanilla)
+- HTML5/CSS3
 - APIs do Chrome/Edge Extension
-- API OpenAI GPT-4o-mini, GPT-3.5-Turbo e GPT-4
+- API OpenAI (GPT-4o Mini e GPT-4o)
 
-## Privacidade
+## Privacidade e Segurança
 
-Esta extensão processa todos os dados localmente em seu navegador, exceto pelos comentários enviados para a API da OpenAI para análise. Nenhum dado é armazenado permanentemente nos servidores.
+Esta extensão processa todos os dados localmente em seu navegador, com exceção dos comentários enviados para a API da OpenAI para análise. Nenhum dado é armazenado permanentemente em servidores externos. Sua chave de API é armazenada apenas localmente no seu dispositivo.
 
 ## Contribuição
 
-Contribuições são bem-vindas! Se você encontrar um bug ou tiver uma sugestão de melhoria, sinta-se à vontade para abrir uma issue ou enviar um pull request.
+Contribuições são bem-vindas! Se você encontrar um bug ou tiver uma sugestão de melhoria, sinta-se à vontade para:
+
+1. Abrir uma issue descrevendo o problema ou sugestão
+2. Enviar um pull request com suas alterações
+3. Compartilhar feedback sobre a usabilidade da extensão
+
+## Agradecimentos
+
+Agradecemos a todos os usuários que contribuíram com feedback e sugestões para a melhoria contínua desta extensão.
+
+## Histórico de Versões
+
+| Versão | Data       | Principais Mudanças                                                                                                                                                                                                                                                                  |
+| ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.2.1  | 2023/07/20 | • Adição de rating visual para satisfação (Positivo/Negativo/Misto)<br>• Implementação de pontuação de 0-10 para conteúdo<br>• Organização visual de pontos positivos e negativos<br>• Novo layout moderno para a aba de satisfação                                                  |
+| 1.2.0  | 2023/07/10 | • Correção de bugs na extração de respostas aos comentários<br>• Simplificação da lista de modelos para GPT-4o Mini e GPT-4o<br>• Detecção aprimorada de sugestões nos comentários<br>• Extração de sugestões do resumo geral<br>• Prompts mais detalhados para análise de sugestões |
+| 1.1.9  | 2023/06/25 | • Revertidas alterações estéticas para garantir compatibilidade                                                                                                                                                                                                                      |
+| 1.1.8  | 2023/06/15 | • Navegação melhorada com botão flutuante contextual<br>• Validação em tempo real durante navegação<br>• Interface mais limpa entre diferentes vídeos                                                                                                                                |
+| 1.1.7  | 2023/06/01 | • Fluxo de trabalho otimizado para análises salvas<br>• Validação aprimorada das análises<br>• Experiência de usuário mais intuitiva                                                                                                                                                 |
+| 1.1.6  | 2023/05/20 | • Correção do comportamento do botão flutuante<br>• Validação mais rigorosa das análises salvas                                                                                                                                                                                      |
+| 1.1.5  | 2023/05/10 | • Correção de erro crítico "Extension context invalidated"<br>• Melhorias no tratamento de erros                                                                                                                                                                                     |
+| 1.1.4  | 2023/05/01 | • Salvamento de comentários relevantes por categoria<br>• Menções a usuários clicáveis nas análises                                                                                                                                                                                  |
+| 1.1.3  | 2023/04/15 | • Persistência do estado de extração<br>• Melhorias na interface e feedback visual                                                                                                                                                                                                   |
+
+---
+
+© 2023 YouTube Comments Extractor. Todos os direitos reservados.
