@@ -522,12 +522,20 @@ async function categorizeComments() {
             categorizedComments.extraInfo.comments.push(comment);
         }
 
-        // Verificar sugestões
+        // Verificar sugestões - Lista expandida de palavras-chave
         if (
             text.includes('sugiro') || text.includes('sugestão') || text.includes('podia') ||
             text.includes('poderia') || text.includes('devia') || text.includes('deveria') ||
             text.includes('que tal') || text.includes('próximo vídeo') || text.includes('ideia') ||
-            text.includes('recomendo') || text.includes('seria legal') || text.includes('seria interessante')
+            text.includes('recomendo') || text.includes('seria legal') || text.includes('seria interessante') ||
+            text.includes('gostaria') || text.includes('gostaria de ver') || text.includes('faz um vídeo') ||
+            text.includes('fazer um vídeo') || text.includes('poderiam') || text.includes('deveriam') ||
+            text.includes('façam') || text.includes('fala sobre') || text.includes('falar sobre') ||
+            text.includes('abordar') || text.includes('tema') || text.includes('falta') ||
+            text.includes('falta falar') || text.includes('próximo tema') || text.includes('tópico') ||
+            text.includes('assunto') || text.includes('novo vídeo') || text.includes('explica') ||
+            text.includes('explicar') || text.includes('mostrar como') || text.includes('ensina') ||
+            text.includes('ensinar') || text.includes('tutorial')
         ) {
             categorizedComments.suggestions.comments.push(comment);
         }
@@ -591,10 +599,71 @@ async function analyzeCategories() {
     }
 }
 
-// Exibe os resultados da análise na interface
-function displayResults() {
-    hideProgress();
+// Verifica se o resumo contém sugestões e tenta sincronizar com a categoria específica
+function synchronizeSuggestions() {
+    // Se não há análise de resumo ou de sugestões, não há nada a fazer
+    if (!categorizedComments.summary.analysis || !categorizedComments.summary.analysis.result ||
+        !categorizedComments.suggestions) {
+        return;
+    }
 
+    const summaryText = categorizedComments.summary.analysis.result.toLowerCase();
+
+    // Verificar se o resumo menciona sugestões mas a categoria não tem conteúdo
+    const hasSuggestionKeywords = summaryText.includes('sugestão') ||
+        summaryText.includes('sugestões') ||
+        summaryText.includes('sugeriram') ||
+        summaryText.includes('sugere') ||
+        summaryText.includes('pediram') ||
+        summaryText.includes('solicitaram');
+
+    // Se o resumo menciona sugestões, mas a categoria de sugestões está vazia ou tem poucos comentários
+    if (hasSuggestionKeywords &&
+        (categorizedComments.suggestions.comments.length < 3 ||
+            (categorizedComments.suggestions.analysis &&
+                categorizedComments.suggestions.analysis.result === 'Não há comentários suficientes nesta categoria para análise.'))) {
+
+        console.log('Encontradas menções a sugestões no resumo, mas categoria de sugestões está vazia ou incompleta.');
+
+        // Extrair seção de sugestões do resumo
+        let suggestionSection = '';
+        const lines = categorizedComments.summary.analysis.result.split('\n');
+        let inSuggestionSection = false;
+
+        for (const line of lines) {
+            // Detectar início da seção de sugestões
+            if (line.toLowerCase().includes('sugestão') ||
+                line.toLowerCase().includes('sugestões') ||
+                line.toLowerCase().includes('pedidos')) {
+                inSuggestionSection = true;
+            }
+            // Detectar possível fim da seção (nova seção com título)
+            else if (inSuggestionSection && line.trim() !== '' && line.includes(':')) {
+                const possibleHeader = line.split(':')[0].trim().toLowerCase();
+                if (!possibleHeader.includes('sugestão') &&
+                    line.length <= 50 && // Provavelmente um cabeçalho, não conteúdo
+                    !line.includes(',')) {
+                    inSuggestionSection = false;
+                }
+            }
+
+            if (inSuggestionSection && line.trim() !== '') {
+                suggestionSection += line + '\n';
+            }
+        }
+
+        // Se encontrou conteúdo de sugestões, use-o na categoria de sugestões
+        if (suggestionSection.trim().length > 0) {
+            console.log('Extraída seção de sugestões do resumo:', suggestionSection);
+            categorizedComments.suggestions.analysis = {
+                result: suggestionSection
+            };
+        }
+    }
+}
+
+// Cria as abas para cada categoria
+function createTabs() {
     // Limpar resultados anteriores
     elements.analysisResults.innerHTML = '';
     elements.tabsContainer.innerHTML = '';
@@ -704,11 +773,26 @@ function displayResults() {
     // Configurar event listeners para menções de usuários
     setupMentionListeners();
 
-    // Exibir estatísticas
-    displayStatistics();
-
     // Salvar análise no localStorage
     saveAnalysisResults();
+}
+
+// Exibe os resultados da análise na interface
+function displayResults() {
+    hideProgress();
+    setStatus('Análise concluída!', 'success');
+
+    // Verificar se há sugestões no resumo que não foram categorizadas corretamente
+    synchronizeSuggestions();
+
+    // Cria as abas para cada categoria
+    createTabs();
+
+    // Adiciona estatísticas
+    displayStatistics();
+
+    // Mostrar o container de tabs
+    elements.tabsContainer.style.display = 'block';
 }
 
 // Salva os resultados da análise no localStorage

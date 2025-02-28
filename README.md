@@ -61,6 +61,14 @@ Para usar a análise com IA, você precisará:
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos
 
+## Novidades na versão 1.2.0
+
+- **Correção de bug na extração de respostas**: Resolvido problema que abria campos de resposta em vez de expandir respostas existentes, especialmente em vídeos do próprio canal
+- **Modelos de IA otimizados**: Simplificação da lista de modelos para apenas GPT-4o Mini e GPT-4o
+- **Melhoria na categorização de sugestões**: Detecção aprimorada de sugestões nos comentários com mais palavras-chave
+- **Extração de sugestões do resumo**: Nova funcionalidade que extrai sugestões do resumo geral quando não são encontradas na categorização direta
+- **Prompts mais detalhados**: Instruções mais específicas para o modelo de IA extrair sugestões de forma mais eficaz
+
 ## Novidades na versão 1.1.9
 
 - Revertidas alterações estéticas para garantir compatibilidade em diferentes ambientes

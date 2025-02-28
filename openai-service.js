@@ -173,8 +173,17 @@ window.OpenAIService = {
                 break;
 
             case 'suggestions':
-                categorySystemPrompt = 'Analise os comentários que contêm sugestões e pedidos da audiência.';
-                categoryUserPrompt = `Analise estes comentários que contêm sugestões ou pedidos:\n\n${commentText}\n\nIdentifique as principais sugestões e pedidos da audiência, organizando-os por relevância e frequência.`;
+                categorySystemPrompt = 'Analise os comentários que contêm sugestões e pedidos da audiência. Seu objetivo é identificar TODAS as sugestões, mesmo as mais sutis ou implícitas. Não ignore nenhuma sugestão potencial.';
+                categoryUserPrompt = `Analise CUIDADOSAMENTE estes comentários e identifique TODAS as sugestões ou pedidos, mesmo os mais sutis ou implícitos:\n\n${commentText}\n\n
+Por favor, forneça uma análise MUITO DETALHADA e estruturada seguindo este formato:
+
+1. Liste todas as sugestões encontradas, organizadas por relevância e frequência 
+2. Para cada sugestão, inclua:
+   - Uma descrição clara do que foi sugerido
+   - Exemplos de comentários que contêm essa sugestão
+   - A frequência com que a sugestão aparece nos comentários
+
+É MUITO IMPORTANTE que você não omita NENHUMA sugestão, mesmo que pareça vaga ou esteja implícita em apenas um comentário. Toda sugestão é valiosa para a análise.`;
                 break;
 
             default:
@@ -199,11 +208,7 @@ window.ConfigService = {
     getAvailableModels() {
         return [
             { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Recomendado)' },
-            { id: 'gpt-4o', name: 'GPT-4o (Mais potente)' },
-            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Mais rápido)' },
-            { id: 'gpt-4', name: 'GPT-4 (Mais preciso)' },
-            { id: 'o1-mini', name: 'Claude 3 Opus Mini' },
-            { id: 'o3-mini', name: 'Claude 3 Sonnet Mini' }
+            { id: 'gpt-4o', name: 'GPT-4o (Mais potente)' }
         ];
     },
 

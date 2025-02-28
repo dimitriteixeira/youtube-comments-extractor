@@ -937,8 +937,38 @@ async function extractYouTubeComments(extractionConfig, progressCallback) {
 // Função para expandir e extrair respostas
 async function expandAndExtractReplies(commentElement, commentData) {
     try {
-        // Verificar se há um botão "Ver respostas"
-        const repliesButton = commentElement.querySelector('#more-replies button, #reply-button-end yt-button-shape button');
+        // Verificar se há um botão "Ver respostas" (evitando botões de resposta)
+        // Primeiro tentamos encontrar especificamente um botão para expandir respostas
+        const expandRepliesButtons = commentElement.querySelectorAll('ytd-button-renderer#more-replies, ytd-button-renderer#more-replies-button, #more-replies button');
+        let repliesButton = null;
+
+        // Verificamos primeiro os botões mais específicos para expandir respostas
+        for (const button of expandRepliesButtons) {
+            if (button && button.offsetParent !== null) {
+                const buttonText = button.textContent.trim().toLowerCase();
+                // Verificamos se o texto contém palavras-chave relacionadas a ver respostas
+                if (buttonText.includes('ver') || buttonText.includes('mostrar') ||
+                    buttonText.includes('exibir') || buttonText.includes('respostas') ||
+                    buttonText.includes('replies') || buttonText.includes('view')) {
+                    repliesButton = button;
+                    break;
+                }
+            }
+        }
+
+        // Se não encontrarmos um botão específico, buscamos outros elementos que possam ser o botão de respostas
+        if (!repliesButton) {
+            const replyButtonEnd = commentElement.querySelector('#reply-button-end yt-button-shape button');
+            if (replyButtonEnd && replyButtonEnd.offsetParent !== null) {
+                // Verificamos se o elemento parental tem alguma indicação que é para expandir respostas
+                const parentText = replyButtonEnd.closest('#more-replies') ?
+                    replyButtonEnd.closest('#more-replies').textContent.trim().toLowerCase() : '';
+
+                if (parentText.includes('respostas') || parentText.includes('replies')) {
+                    repliesButton = replyButtonEnd;
+                }
+            }
+        }
 
         if (repliesButton && repliesButton.offsetParent !== null) {
             // Rolar para o botão para garantir que seja clicável
