@@ -712,7 +712,7 @@ function createTabs() {
 
             // Verificar se há um resultado formatado ou usar o bruto
             if (category.analysis.result) {
-                analysisDiv.innerHTML = formatAnalysisResult(category.analysis.result);
+                analysisDiv.innerHTML = formatAnalysisResult(category.analysis.result, categoryId);
             } else {
                 analysisDiv.textContent = 'Não foi possível analisar os comentários desta categoria.';
             }
@@ -1004,8 +1004,16 @@ function createCommentElement(comment) {
 }
 
 // Formata o resultado da análise para HTML
-function formatAnalysisResult(result) {
+function formatAnalysisResult(result, categoryId) {
     if (!result) return 'Não há resultado de análise disponível.';
+
+    // Se for a categoria de satisfação, verificar se podemos extrair rating e sentimento
+    if (categoryId === 'satisfaction') {
+        const satisfactionResult = extractSatisfactionData(result);
+        if (satisfactionResult) {
+            return satisfactionResult;
+        }
+    }
 
     // Se o resultado já vier em HTML, retornar direto
     if (result.includes('<') && result.includes('>') && !result.includes('###')) {
@@ -1400,7 +1408,7 @@ async function showSavedAnalysisModal(analysisData) {
         if (category.analysis) {
             const analysisDiv = document.createElement('div');
             analysisDiv.className = 'analysis-result';
-            analysisDiv.innerHTML = formatAnalysisResult(category.analysis);
+            analysisDiv.innerHTML = formatAnalysisResult(category.analysis, categoryId);
             tabContent.appendChild(analysisDiv);
         }
 
@@ -1510,4 +1518,113 @@ function showStatusMessage(message, type = 'info') {
     // Adicionar animação
     elements.statusMessage.style.animation = 'fadeOut 3s forwards';
     elements.statusMessage.style.animationDelay = '2s';
+}
+
+// Extrai e formata os dados de satisfação a partir do resultado da análise
+function extractSatisfactionData(result) {
+    try {
+        // Tentar extrair os dados estruturados da resposta
+        let sentiment = result.match(/SENTIMENT: (Positivo|Negativo|Misto)/i);
+        let rating = result.match(/RATING: ([0-9]|10)/i);
+
+        if (!sentiment || !rating) {
+            console.log('Formato de satisfação não encontrado, usando formatação padrão');
+            return null;
+        }
+
+        sentiment = sentiment[1];
+        rating = parseInt(rating[1], 10);
+
+        // Extrair pontos positivos e negativos
+        let positivePoints = [];
+        let negativePoints = [];
+        let analysisText = '';
+
+        // Extrair pontos positivos
+        const posSection = result.match(/Pontos Positivos:[\s\S]*?(?=Pontos Negativos:|ANALYSIS:|$)/i);
+        if (posSection) {
+            positivePoints = posSection[0].split('\n')
+                .filter(line => line.trim().startsWith('-'))
+                .map(line => line.trim().substring(1).trim());
+        }
+
+        // Extrair pontos negativos
+        const negSection = result.match(/Pontos Negativos:[\s\S]*?(?=ANALYSIS:|$)/i);
+        if (negSection) {
+            negativePoints = negSection[0].split('\n')
+                .filter(line => line.trim().startsWith('-'))
+                .map(line => line.trim().substring(1).trim());
+        }
+
+        // Extrair análise detalhada
+        const analysisSection = result.match(/ANALYSIS:[\s\S]*?$/i);
+        if (analysisSection) {
+            analysisText = analysisSection[0].replace(/ANALYSIS:[\s]*/i, '').trim();
+        }
+
+        // Construir o HTML de satisfação
+        const sentimentColor = sentiment === 'Positivo' ? '#4CAF50' :
+            sentiment === 'Negativo' ? '#F44336' : '#FF9800';
+
+        let html = `
+            <div class="satisfaction-container">
+                <div class="satisfaction-header">
+                    <div class="sentiment-badge" style="background-color: ${sentimentColor}">
+                        ${sentiment}
+                    </div>
+                    <div class="rating-container">
+                        <div class="rating-label">Nota do conteúdo</div>
+                        <div class="rating-value">${rating}/10</div>
+                        <div class="rating-bar">
+                            <div class="rating-fill" style="width: ${rating * 10}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="satisfaction-points">
+                    <div class="positive-points">
+                        <h3>Pontos Positivos</h3>
+                        <ul>
+                            ${positivePoints.map(point => `<li>${point}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="negative-points">
+                        <h3>Pontos Negativos</h3>
+                        <ul>
+                            ${negativePoints.map(point => `<li>${point}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="satisfaction-analysis">
+                    <h3>Análise Detalhada</h3>
+                    <div>${formatAnalysisText(analysisText)}</div>
+                </div>
+            </div>
+        `;
+
+        return html;
+    } catch (error) {
+        console.error('Erro ao processar dados de satisfação:', error);
+        return null;
+    }
+}
+
+// Formata o texto da análise para HTML
+function formatAnalysisText(text) {
+    if (!text) return '';
+
+    return text
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/@([a-zA-Z0-9_]+)/g, function (match, username) {
+            // Procurar o comentário correspondente
+            const commentAuthor = findCommentByAuthor(username);
+            if (commentAuthor) {
+                return `<a href="#" class="user-mention" data-comment-id="${commentAuthor.id}" title="Ver comentário de ${username}">${match}</a>`;
+            }
+            return match;
+        });
 } 

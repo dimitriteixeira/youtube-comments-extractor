@@ -13,11 +13,20 @@ Uma extensão para Microsoft Edge que extrai e analisa comentários de vídeos d
 - **Interface aprimorada**: Design moderno e intuitivo com feedback visual para ações
 - **Comentários salvos**: Mantém os comentários mais relevantes para visualização posterior
 
+## Novidades na versão 1.2.1
+
+- **Rating de satisfação**: Adição de um indicador visual que mostra o sentimento geral nos comentários (Positivo, Negativo ou Misto)
+- **Pontuação do conteúdo**: Escala de 0 a 10 que representa a satisfação geral do público com o vídeo
+- **Organização visual de pontos**: Exibição clara dos pontos positivos e negativos mencionados nos comentários
+- **Interface aprimorada**: Layout moderno para a aba de satisfação com indicadores visuais coloridos
+
 ## O que a extensão analisa
 
-- Se o vídeo atendeu às expectativas do público
-- Informações extras relevantes compartilhadas nos comentários, com detalhes e exemplos
-- Sugestões de outros assuntos mencionados pelo público, com detalhes e exemplos
+- Sentimento geral nos comentários (Positivo, Negativo ou Misto)
+- Nota de 0 a 10 para o conteúdo baseada na satisfação do público
+- Pontos positivos e negativos específicos mencionados nos comentários
+- Informações extras relevantes compartilhadas nos comentários
+- Sugestões de outros assuntos mencionados pelo público
 - Resumo geral do feedback
 
 ## Requisitos
@@ -56,7 +65,7 @@ Para usar a análise com IA, você precisará:
 4. Aguarde o processo de extração e análise ser concluído
 5. Navegue pelas abas para visualizar os resultados:
    - **Resumo**: Visão geral dos comentários
-   - **Satisfação**: Análise se o vídeo atendeu às expectativas
+   - **Satisfação**: Análise da satisfação com rating visual, pontuação e pontos positivos/negativos
    - **Extras**: Informações adicionais mencionadas nos comentários
    - **Sugestões**: Tópicos sugeridos pelo público
    - **Comentários**: Lista completa dos comentários extraídos

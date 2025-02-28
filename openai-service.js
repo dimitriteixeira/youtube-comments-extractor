@@ -163,8 +163,19 @@ window.OpenAIService = {
                 break;
 
             case 'satisfaction':
-                categorySystemPrompt = 'Analise os comentários relacionados à satisfação ou insatisfação dos usuários.';
-                categoryUserPrompt = `Analise estes comentários que expressam satisfação ou insatisfação sobre o vídeo:\n\n${commentText}\n\nForneca uma análise detalhada da satisfação dos usuários, identificando pontos positivos e negativos, o sentimento geral e recomendações baseadas nas opiniões.`;
+                categorySystemPrompt = 'Analise os comentários relacionados à satisfação ou insatisfação dos usuários. Identifique o sentimento geral (Positivo, Negativo ou Misto) e atribua uma pontuação de 0 a 10 com base na satisfação dos usuários.';
+                categoryUserPrompt = `Analise estes comentários que expressam satisfação ou insatisfação sobre o vídeo:\n\n${commentText}\n\n
+Por favor, forneça uma análise estruturada seguindo este formato específico:
+
+1. SENTIMENT: [Positivo/Negativo/Misto] - Classifique o sentimento geral predominante nos comentários
+2. RATING: [0-10] - Atribua uma nota de 0 a 10 para o conteúdo baseado nos comentários (onde 0 é totalmente insatisfeito e 10 é extremamente satisfeito)
+3. POINTS:
+   - Pontos Positivos: Liste os principais aspectos positivos mencionados nos comentários
+   - Pontos Negativos: Liste os principais aspectos negativos mencionados nos comentários
+4. ANALYSIS:
+   - Forneça uma análise detalhada da satisfação dos usuários, explicando os fatores que influenciaram a avaliação e insights relevantes sobre a percepção da audiência
+
+É importante manter este formato exato para que a interface possa exibir corretamente as informações. Use JSON para os dados estruturados.`;
                 break;
 
             case 'extraInfo':
